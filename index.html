@@ -787,12 +787,7 @@ async function genNumeroVenta() {
   return 14100 + ventas.length;
 }
 
-async function genNumeroRemito() {
-  if (window.getNextNumero) {
-    return await window.getNextNumero('remitos');
-  }
-  return 14100 + ventas.length;
-}
+
 
 function formatMoney(n) {
   if (!n) return '—';
@@ -1248,11 +1243,11 @@ renderAll();
 
 <script>
 // ===== REMITO =====
-async function generarRemito(id) {
+function generarRemito(id) {
   const v = ventas.find(x => x.id === id);
   if (!v) return;
   const saldo = (Number(v.monto)||0) - (Number(v.sena)||0);
-  const numRemito = v.numeroVenta || await genNumeroRemito();
+  const numRemito = v.numeroVenta || '—';
   const hoy = new Date().toLocaleDateString('es-AR');
 
   document.getElementById('remito-body').innerHTML = `
