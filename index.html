@@ -57,15 +57,23 @@
   };
 
   // Contador consecutivo en Firebase
+  const { runTransaction } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  
   window.getNextNumero = async (tipo) => {
     const ref = doc(db, 'contadores', tipo);
     try {
-      const snap = await getDoc(ref);
-      const actual = snap.exists() ? snap.data().valor : 14099;
-      const siguiente = actual + 1;
-      await setDoc(ref, { valor: siguiente });
+      const siguiente = await runTransaction(db, async (transaction) => {
+        const snap = await transaction.get(ref);
+        const actual = snap.exists() ? snap.data().valor : 14099;
+        const next = actual + 1;
+        transaction.set(ref, { valor: next });
+        return next;
+      });
       return siguiente;
-    } catch(e) { return 14100; }
+    } catch(e) { 
+      console.error('Counter error:', e);
+      return 14100 + Math.floor(Math.random() * 100);
+    }
   };
 </script>
 <link rel="apple-touch-icon" id="pwa-icon">
@@ -727,7 +735,8 @@ async function syncToSheets(v, accion) {
       fechaEntregaReal: v.fechaEntregaReal,
       estadoEntrega: accion === 'cancelada' ? 'CANCELADA' : v.estadoEntrega,
       notas: accion === 'cancelada' ? '⚠ CANCELADA — ' + new Date().toLocaleDateString('es-AR') + (v.notas ? ' | ' + v.notas : '') : v.notas,
-      accion: accion
+      accion: accion,
+      numeroVenta: v.numeroVenta || ''
     };
     const resp = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
     const json = await resp.json();
@@ -1243,7 +1252,7 @@ async function generarRemito(id) {
   const v = ventas.find(x => x.id === id);
   if (!v) return;
   const saldo = (Number(v.monto)||0) - (Number(v.sena)||0);
-  const numRemito = await genNumeroRemito();
+  const numRemito = v.numeroVenta || await genNumeroRemito();
   const hoy = new Date().toLocaleDateString('es-AR');
 
   document.getElementById('remito-body').innerHTML = `
