@@ -12,7 +12,7 @@
 <link rel="manifest" id="pwa-manifest">
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCshw1t7OXjTbg8ebvQzLn3VKxbY94cuRI",
@@ -54,6 +54,18 @@
       await deleteDoc(doc(db, 'ventas', id));
       return true;
     } catch(e) { console.error(e); return false; }
+  };
+
+  // Contador consecutivo en Firebase
+  window.getNextNumero = async (tipo) => {
+    const ref = doc(db, 'contadores', tipo);
+    try {
+      const snap = await getDoc(ref);
+      const actual = snap.exists() ? snap.data().valor : 14099;
+      const siguiente = actual + 1;
+      await setDoc(ref, { valor: siguiente });
+      return siguiente;
+    } catch(e) { return 14100; }
   };
 </script>
 <link rel="apple-touch-icon" id="pwa-icon">
@@ -429,6 +441,37 @@
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
+  .remito-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.85);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 400;
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s;
+  }
+  .remito-overlay.open { opacity: 1; pointer-events: all; }
+  .remito-sheet {
+    background: #fff;
+    color: #111;
+    width: 700px;
+    max-width: 96vw;
+    max-height: 92vh;
+    overflow-y: auto;
+    border-radius: 6px;
+    padding: 48px 52px;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+  }
+  .remito-actions {
+    display: flex; gap: 10px; justify-content: flex-end;
+    margin-top: 28px;
+  }
+  @media print {
+    body > * { display: none !important; }
+    .remito-overlay { display: flex !important; opacity: 1 !important; pointer-events: all !important; background: #fff !important; }
+    .remito-sheet { box-shadow: none !important; max-height: none !important; }
+    .remito-actions { display: none !important; }
+  }
   @media (max-width: 700px) {
     .form-grid { grid-template-columns: 1fr; }
     .stats { grid-template-columns: 1fr 1fr; }
@@ -652,6 +695,7 @@
     <div id="detail-body"></div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeDetail()">Cerrar</button>
+      <button class="btn btn-ghost" id="detail-remito-btn" style="border-color:var(--accent);color:var(--accent)">🧾 Remito</button>
       <button class="btn btn-primary" id="detail-edit-btn">Editar</button>
     </div>
   </div>
@@ -725,6 +769,20 @@ function save() {
 
 function genId() {
   return 'V' + Date.now();
+}
+
+async function genNumeroVenta() {
+  if (window.getNextNumero) {
+    return await window.getNextNumero('ventas');
+  }
+  return 14100 + ventas.length;
+}
+
+async function genNumeroRemito() {
+  if (window.getNextNumero) {
+    return await window.getNextNumero('remitos');
+  }
+  return 14100 + ventas.length;
 }
 
 function formatMoney(n) {
@@ -901,7 +959,7 @@ function renderTable() {
     const entregaClass = v.estadoEntrega === 'Entregado' ? 'badge-entregado' : v.estadoEntrega === 'En proceso' ? 'badge-en-proceso' : 'badge-no-entregado';
     const cc = canalClass[v.canal] || 'canal-wp';
     return `<tr onclick="openDetail('${v.id}')">
-      <td class="td-mono" style="color:var(--muted)">${v.id.slice(-4)}</td>
+      <td class="td-mono" style="color:var(--muted)">${v.numeroVenta || '—'}</td>
       <td><strong>${v.cliente || '—'}</strong><br><span style="color:var(--muted);font-size:11px">${v.negocio}</span></td>
       <td class="col-hide" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v.producto || '—'}</td>
       <td class="col-hide"><span class="canal-dot ${cc}">${v.canal}</span></td>
@@ -909,7 +967,10 @@ function renderTable() {
       <td class="col-hide">${formatDate(v.fechaCompra)}</td>
       <td>${formatDate(v.fechaEntregaEst)}<br><span class="badge ${entregaClass}">${v.estadoEntrega}</span></td>
       <td><span class="badge ${pagoClass}">${v.estadoPago}</span></td>
-      <td onclick="event.stopPropagation(); openModal('${v.id}')" style="color:var(--muted);font-size:18px;padding-right:16px;text-align:right">✎</td>
+      <td style="text-align:right;padding-right:12px;white-space:nowrap">
+        <button onclick="event.stopPropagation(); generarRemito('${v.id}')" style="background:none;border:none;font-size:15px;cursor:pointer;margin-right:4px" title="Remito">🧾</button>
+        <button onclick="event.stopPropagation(); openModal('${v.id}')" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer" title="Editar">✎</button>
+      </td>
     </tr>`;
   }).join('');
 }
@@ -1014,9 +1075,11 @@ function closeModal() {
   document.getElementById('modal').classList.remove('open');
 }
 
-function saveVenta() {
+async function saveVenta() {
+  const numeroVenta = editingId ? ventas.find(x=>x.id===editingId)?.numeroVenta : await genNumeroVenta();
   const v = {
     id: editingId || genId(),
+    numeroVenta: numeroVenta || (14100 + ventas.length),
     negocio: document.getElementById('f-negocio').value,
     canal: document.getElementById('f-canal').value,
     cliente: document.getElementById('f-cliente').value,
@@ -1092,6 +1155,7 @@ function openDetail(id) {
   document.getElementById('detail-title').textContent = v.cliente || 'Detalle de venta';
   document.getElementById('detail-body').innerHTML = `
     <div class="detail-grid">
+      <div class="detail-item"><label>N° Venta</label><div class="val td-mono" style="font-size:18px;color:var(--accent2)">${v.numeroVenta || '—'}</div></div>
       <div class="detail-item"><label>Negocio</label><div class="val">${v.negocio}</div></div>
       <div class="detail-item"><label>Canal</label><div class="val">${v.canal}</div></div>
       <div class="detail-item"><label>Cliente</label><div class="val">${v.cliente||'—'}</div></div>
@@ -1112,6 +1176,10 @@ function openDetail(id) {
   document.getElementById('detail-edit-btn').onclick = () => {
     closeDetail();
     openModal(id);
+  };
+  document.getElementById('detail-remito-btn').onclick = () => {
+    closeDetail();
+    generarRemito(id);
   };
   document.getElementById('modal-detail').classList.add('open');
 }
@@ -1137,12 +1205,7 @@ function exportCSV() {
   a.click();
 }
 
-document.getElementById('modal').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
-document.getElementById('modal-detail').addEventListener('click', function(e) {
-  if (e.target === this) closeDetail();
-});
+
 
 function renderAll() {
   renderStats();
@@ -1151,7 +1214,19 @@ function renderAll() {
 }
 
 renderAll();
+
 </script>
+
+<!-- REMITO -->
+<div class="remito-overlay" id="remito-overlay">
+  <div class="remito-sheet">
+    <div id="remito-body"></div>
+    <div class="remito-actions">
+      <button onclick="document.getElementById('remito-overlay').classList.remove('open')" style="padding:9px 18px;border-radius:8px;border:1px solid #ccc;background:#fff;font-size:13px;cursor:pointer;">Cerrar</button>
+      <button onclick="window.print()" style="padding:9px 20px;border-radius:8px;border:none;background:#111;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">Imprimir / Guardar PDF</button>
+    </div>
+  </div>
+</div>
 
 <div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:14px 20px;z-index:300;align-items:center;gap:12px;box-shadow:0 -4px 20px rgba(0,0,0,.4);">
   <div style="flex:1">
@@ -1163,6 +1238,96 @@ renderAll();
 </div>
 
 <script>
+// ===== REMITO =====
+async function generarRemito(id) {
+  const v = ventas.find(x => x.id === id);
+  if (!v) return;
+  const saldo = (Number(v.monto)||0) - (Number(v.sena)||0);
+  const numRemito = await genNumeroRemito();
+  const hoy = new Date().toLocaleDateString('es-AR');
+
+  document.getElementById('remito-body').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #111;padding-bottom:14px;margin-bottom:20px">
+      <div>
+        <div style="font-size:20px;font-weight:700;letter-spacing:.5px">ALUWAL S.R.L.</div>
+        <div style="font-size:11px;color:#555;margin-top:3px">CUIT: 30-71780744-4</div>
+        <div style="font-size:11px;color:#555">Tel: 11 2394-8049 | @aluwal.arg</div>
+        <div style="font-size:11px;color:#555">www.aluwalaberturas.com.ar</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:18px;font-weight:700;text-transform:uppercase">Remito</div>
+        <div style="font-size:12px;color:#555;margin-top:4px">Remito N° ${numRemito}</div>
+        <div style="font-size:11px;color:#888">Venta N° ${v.numeroVenta||'—'}</div>
+        <div style="font-size:12px;color:#555">Fecha: ${hoy}</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;background:#f5f5f5;padding:14px;border-radius:6px">
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#888;margin-bottom:4px">Cliente</div>
+        <div style="font-weight:600;font-size:14px">${v.cliente||'—'}</div>
+        <div style="color:#555;font-size:12px;margin-top:2px">${v.contacto||''}</div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#888;margin-bottom:4px">Canal / Negocio</div>
+        <div style="font-size:13px">${v.canal}</div>
+        <div style="font-size:12px;color:#555">${v.negocio}</div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#888;margin-bottom:4px">Fecha de compra</div>
+        <div style="font-size:13px">${formatDate(v.fechaCompra)}</div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#888;margin-bottom:4px">Entrega estimada</div>
+        <div style="font-size:13px">${formatDate(v.fechaEntregaEst)||'A confirmar'}</div>
+      </div>
+    </div>
+
+    <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+      <thead>
+        <tr style="background:#111;color:#fff">
+          <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.7px">Descripción</th>
+          <th style="padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:.7px">Precio</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #e0e0e0">
+          <td style="padding:14px 12px;font-size:13px">${v.producto||'—'}</td>
+          <td style="padding:14px 12px;text-align:right;font-family:monospace;font-size:13px">${formatMoney(v.monto)}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="display:flex;justify-content:flex-end;margin-bottom:24px">
+      <div style="width:260px">
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e0e0e0;font-size:13px">
+          <span>Total</span>
+          <span style="font-family:monospace;font-weight:600">${formatMoney(v.monto)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e0e0e0;font-size:13px;color:#555">
+          <span>Anticipo / Seña</span>
+          <span style="font-family:monospace">${formatMoney(v.sena)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:10px 0;font-size:15px;font-weight:700">
+          <span>Resta pagar</span>
+          <span style="font-family:monospace">${formatMoney(saldo)}</span>
+        </div>
+        <div style="font-size:11px;color:#888;margin-top:4px;text-align:right">Forma de pago: ${v.formaPago}</div>
+      </div>
+    </div>
+
+    ${v.notas ? `<div style="background:#fffbe6;border-left:3px solid #e8c547;padding:10px 14px;border-radius:0 4px 4px 0;font-size:12px;color:#555;margin-bottom:20px"><strong>Notas:</strong> ${v.notas}</div>` : ''}
+
+    <div style="border-top:1px solid #e0e0e0;padding-top:14px;display:flex;justify-content:space-between;align-items:flex-end">
+      <div style="font-size:11px;color:#aaa">Documento no válido como factura</div>
+      <div style="text-align:center">
+        <div style="border-top:1px solid #111;width:160px;padding-top:6px;font-size:11px;color:#555">Firma y aclaración</div>
+      </div>
+    </div>
+  `;
+  document.getElementById('remito-overlay').classList.add('open');
+}
+
 // PWA Manifest generado dinámicamente
 const manifestData = {
   name: "Aluwal Ventas",
