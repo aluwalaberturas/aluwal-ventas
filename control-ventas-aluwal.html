@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de Ventas — Aluwal</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Aluwal Ventas">
+<meta name="theme-color" content="#0f0f11">
+<link rel="manifest" id="pwa-manifest">
+<link rel="apple-touch-icon" id="pwa-icon">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0f0f11;
+    --surface: #18181c;
+    --surface2: #222228;
+    --border: #2e2e38;
+    --accent: #e8c547;
+    --accent2: #5b8ef0;
+    --text: #f0f0f2;
+    --muted: #7a7a8e;
+    --success: #4caf7d;
+    --danger: #e05c5c;
+    --warning: #e89b47;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: .5px;
+    color: var(--accent);
+  }
+  .logo span { color: var(--muted); font-weight: 400; }
+  .header-actions { display: flex; gap: 10px; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0 24px;
+    gap: 4px;
+  }
+  .tab {
+    padding: 12px 18px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: all .2s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    font-family: inherit;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* MAIN */
+  .main { padding: 24px; max-width: 1300px; margin: 0 auto; }
+
+  /* STATS */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px; }
+  .stat-value { font-size: 22px; font-weight: 600; font-family: 'DM Mono', monospace; }
+  .stat-value.green { color: var(--success); }
+  .stat-value.yellow { color: var(--accent); }
+  .stat-value.blue { color: var(--accent2); }
+  .stat-value.red { color: var(--danger); }
+
+  /* FILTERS */
+  .filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .filter-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .filter-btn:hover, .filter-btn.active {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+  }
+  .search-input {
+    margin-left: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 14px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    width: 220px;
+    outline: none;
+  }
+  .search-input:focus { border-color: var(--accent2); }
+  .search-input::placeholder { color: var(--muted); }
+
+  /* TABLE */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    padding: 11px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+    cursor: pointer;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody td {
+    padding: 11px 14px;
+    font-size: 13px;
+    vertical-align: middle;
+  }
+  .td-mono { font-family: 'DM Mono', monospace; font-size: 12px; }
+
+  /* BADGES */
+  .badge {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .badge-pagado { background: rgba(76,175,125,.15); color: var(--success); }
+  .badge-pendiente { background: rgba(232,155,71,.15); color: var(--warning); }
+  .badge-parcial { background: rgba(91,142,240,.15); color: var(--accent2); }
+  .badge-entregado { background: rgba(76,175,125,.15); color: var(--success); }
+  .badge-no-entregado { background: rgba(224,92,92,.15); color: var(--danger); }
+  .badge-en-proceso { background: rgba(232,197,71,.15); color: var(--accent); }
+
+  .canal-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+  }
+  .canal-dot::before {
+    content: '';
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    display: inline-block;
+    opacity: .8;
+  }
+  .canal-ml { color: #ffe066; }
+  .canal-tn { color: var(--accent2); }
+  .canal-wp { color: var(--success); }
+  .canal-sh { color: #c084fc; }
+  .canal-co { color: #fb923c; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200;
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    width: 620px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 28px;
+    transform: translateY(20px);
+    transition: transform .2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .close-btn {
+    background: none; border: none;
+    color: var(--muted); font-size: 20px;
+    cursor: pointer; line-height: 1;
+    padding: 4px;
+  }
+  .close-btn:hover { color: var(--text); }
+
+  /* FORM */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .form-grid .full { grid-column: 1 / -1; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; }
+  .field input, .field select, .field textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent2); }
+  .field select option { background: var(--surface2); }
+  .field textarea { resize: vertical; min-height: 70px; }
+
+  .section-sep {
+    grid-column: 1 / -1;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* BUTTONS */
+  .btn {
+    padding: 9px 18px;
+    border-radius: 8px;
+    border: none;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #f2d060; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+  .btn-danger { background: rgba(224,92,92,.15); color: var(--danger); border: 1px solid rgba(224,92,92,.3); }
+  .btn-danger:hover { background: rgba(224,92,92,.25); }
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
+
+  .btn-add {
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-add:hover { background: #f2d060; }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty p { font-size: 14px; }
+
+  /* DETAIL VIEW */
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .detail-item label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: var(--muted);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 3px;
+  }
+  .detail-item .val {
+    font-size: 14px;
+    color: var(--text);
+  }
+  .detail-item.full { grid-column: 1/-1; }
+  .nota-box {
+    background: var(--surface2);
+    border-left: 3px solid var(--accent);
+    padding: 10px 14px;
+    border-radius: 0 6px 6px 0;
+    font-size: 13px;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  /* EXPORT BUTTON */
+  .btn-export {
+    padding: 7px 14px;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-export:hover { color: var(--text); border-color: var(--muted); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 700px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .detail-grid { grid-template-columns: 1fr; }
+    .main { padding: 14px; }
+    table { font-size: 12px; }
+    thead th, tbody td { padding: 9px 10px; }
+    .col-hide { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">ALUWAL <span>/ Ventas</span></div>
+  <div class="header-actions">
+    <span id="sync-indicator" style="font-size:12px;margin-right:8px"></span>
+    <button id="btn-sync-pendientes" onclick="syncPendientes()" style="display:none;padding:7px 14px;border-radius:8px;background:rgba(232,155,71,.15);color:var(--warning);border:1px solid rgba(232,155,71,.4);font-family:inherit;font-size:12px;cursor:pointer;align-items:center;gap:6px;">
+      ↑ Subir pendientes <span id="badge-pendientes" style="background:var(--warning);color:#000;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:600"></span>
+    </button>
+    <button class="btn-export" onclick="exportCSV()">
+      ↓ Exportar CSV
+    </button>
+    <button class="btn-add" onclick="openModal()">
+      + Nueva venta
+    </button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="setTab('ventas',this)">Ventas</button>
+  <button class="tab" onclick="setTab('dashboard',this)">Dashboard</button>
+</div>
+
+<div class="main">
+
+  <!-- STATS -->
+  <div class="stats" id="stats"></div>
+
+  <!-- TAB: VENTAS -->
+  <div id="tab-ventas">
+    <div class="filters">
+      <button class="filter-btn active" onclick="setFilter('todos',this)">Todos</button>
+      <button class="filter-btn" onclick="setFilter('pagado',this)">Pagados</button>
+      <button class="filter-btn" onclick="setFilter('pendiente',this)">Pago pendiente</button>
+      <button class="filter-btn" onclick="setFilter('no-entregado',this)">Sin entregar</button>
+      <button class="filter-btn" onclick="setFilter('entregado',this)">Entregados</button>
+      <input class="search-input" placeholder="Buscar cliente, producto..." oninput="renderTable()" id="search">
+    </div>
+    <div class="filters" style="margin-top:-8px; margin-bottom:18px;">
+      <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:600">Período:</span>
+      <button class="filter-btn active" onclick="setPeriodo('todo',this)">Todo</button>
+      <button class="filter-btn" onclick="setPeriodo('hoy',this)">Hoy</button>
+      <button class="filter-btn" onclick="setPeriodo('semana',this)">Esta semana</button>
+      <button class="filter-btn" onclick="setPeriodo('mes',this)">Este mes</button>
+      <button class="filter-btn" onclick="setPeriodo('anio',this)">Este año</button>
+      <input type="month" id="filter-mes-custom" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--text);font-family:inherit;font-size:12px;outline:none;margin-left:4px;" onchange="setPeriodoCustom(this.value)" title="Elegir mes específico">
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Cliente</th>
+            <th class="col-hide">Producto</th>
+            <th class="col-hide">Canal</th>
+            <th>Monto</th>
+            <th class="col-hide">Fecha compra</th>
+            <th>Entrega</th>
+            <th>Pago</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div id="empty-state" class="empty" style="display:none">
+        <div class="empty-icon">📋</div>
+        <p>No hay ventas registradas todavía</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: DASHBOARD -->
+  <div id="tab-dashboard" style="display:none">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:8px;">
+      <div class="table-wrap" style="padding:20px;">
+        <div style="font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin-bottom:14px;">Ventas por canal</div>
+        <div id="chart-canal"></div>
+      </div>
+      <div class="table-wrap" style="padding:20px;">
+        <div style="font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin-bottom:14px;">Estado de cobros</div>
+        <div id="chart-pago"></div>
+      </div>
+      <div class="table-wrap" style="padding:20px; grid-column:1/-1;">
+        <div style="font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin-bottom:14px;">Últimas ventas</div>
+        <div id="chart-recientes"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL NUEVA VENTA / EDITAR -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="modal-title-text">Nueva venta</span>
+      <button class="close-btn" onclick="closeModal()">×</button>
+    </div>
+    <div class="form-grid">
+      <div class="section-sep">Negocio y cliente</div>
+
+      <div class="field">
+        <label>Negocio</label>
+        <select id="f-negocio">
+          <option>Aluwal Aberturas</option>
+          <option>Aluwal Home</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Canal de venta</label>
+        <select id="f-canal">
+          <option>WhatsApp / Directo</option>
+          <option>MercadoLibre</option>
+          <option>Tienda Nube</option>
+          <option>Showroom / Local</option>
+          <option>Constructoras</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Nombre cliente</label>
+        <input id="f-cliente" placeholder="Ej: Juan Pérez">
+      </div>
+      <div class="field">
+        <label>Contacto (tel / mail)</label>
+        <input id="f-contacto" placeholder="Ej: 11 5555-1234">
+      </div>
+
+      <div class="section-sep">Producto y venta</div>
+
+      <div class="field full">
+        <label>Producto / descripción</label>
+        <input id="f-producto" placeholder="Ej: Ventana Módena 120x100 DVH blanco">
+      </div>
+      <div class="field">
+        <label>Monto total ($)</label>
+        <input id="f-monto" type="number" placeholder="0">
+      </div>
+      <div class="field">
+        <label>Seña / anticipo ($)</label>
+        <input id="f-sena" type="number" placeholder="0">
+      </div>
+      <div class="field">
+        <label>Forma de pago</label>
+        <select id="f-forma-pago">
+          <option>Efectivo</option>
+          <option>Transferencia</option>
+          <option>3 cuotas</option>
+          <option>3 cuotas Galicia (promo)</option>
+          <option>6 cuotas</option>
+          <option>12 cuotas</option>
+          <option>MercadoPago</option>
+          <option>Cheque</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Estado de pago</label>
+        <select id="f-estado-pago">
+          <option>Pendiente</option>
+          <option>Parcial</option>
+          <option>Pagado</option>
+        </select>
+      </div>
+
+      <div class="section-sep">Fechas y entrega</div>
+
+      <div class="field">
+        <label>Fecha de compra</label>
+        <input id="f-fecha-compra" type="date">
+      </div>
+      <div class="field">
+        <label>Entrega estimada</label>
+        <input id="f-fecha-entrega-est" type="date">
+      </div>
+      <div class="field">
+        <label>Entrega real</label>
+        <input id="f-fecha-entrega-real" type="date">
+      </div>
+      <div class="field">
+        <label>Estado de entrega</label>
+        <select id="f-estado-entrega">
+          <option>No entregado</option>
+          <option>En proceso</option>
+          <option>Entregado</option>
+        </select>
+      </div>
+
+      <div class="section-sep">Notas</div>
+
+      <div class="field full">
+        <label>Observaciones / notas internas</label>
+        <textarea id="f-notas" placeholder="Medidas especiales, aclaraciones, seguimiento..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-danger" id="btn-delete" onclick="deleteVenta()" style="display:none">Eliminar</button>
+      <button class="btn btn-primary" onclick="saveVenta()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALLE -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="detail-title">Detalle de venta</span>
+      <button class="close-btn" onclick="closeDetail()">×</button>
+    </div>
+    <div id="detail-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeDetail()">Cerrar</button>
+      <button class="btn btn-primary" id="detail-edit-btn">Editar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoKLtsyYgpUzA7YlEgTh4ksGBg24u4mBLEAE8pFiuNzchhYN_DWL-erZBpEEJcd0xy/exec";
+
+async function syncToSheets(v, accion) {
+  const indicator = document.getElementById('sync-indicator');
+  indicator.textContent = '⏳ Sincronizando...';
+  indicator.style.color = 'var(--muted)';
+  try {
+    const payload = {
+      id: v.id,
+      negocio: v.negocio,
+      canal: v.canal,
+      cliente: v.cliente,
+      contacto: v.contacto,
+      producto: v.producto,
+      monto: accion === 'cancelada' ? 0 : v.monto,
+      sena: accion === 'cancelada' ? 0 : v.sena,
+      saldo: accion === 'cancelada' ? 0 : (Number(v.monto)||0)-(Number(v.sena)||0),
+      formaPago: v.formaPago,
+      estadoPago: accion === 'cancelada' ? 'CANCELADA' : v.estadoPago,
+      fechaCompra: v.fechaCompra,
+      fechaEntregaEst: v.fechaEntregaEst,
+      fechaEntregaReal: v.fechaEntregaReal,
+      estadoEntrega: accion === 'cancelada' ? 'CANCELADA' : v.estadoEntrega,
+      notas: accion === 'cancelada' ? '⚠ CANCELADA — ' + new Date().toLocaleDateString('es-AR') + (v.notas ? ' | ' + v.notas : '') : v.notas,
+      accion: accion
+    };
+    const resp = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
+    const json = await resp.json();
+    if (json.status === 'ok') {
+      if (accion !== 'cancelada' && !syncedIds.includes(v.id)) {
+        syncedIds.push(v.id);
+        saveSync();
+      }
+      indicator.textContent = accion === 'cancelada' ? '✓ Marcada como cancelada en Sheets' : '✓ Guardado en Sheets';
+      indicator.style.color = 'var(--success)';
+      renderPendienteBadge();
+    } else {
+      throw new Error('resp error');
+    }
+  } catch(err) {
+    indicator.textContent = '⚠ Solo guardado local';
+    indicator.style.color = 'var(--warning)';
+  }
+  setTimeout(() => { indicator.textContent = ''; }, 4000);
+}
+
+let ventas = JSON.parse(localStorage.getItem('aluwal-ventas') || '[]');
+let syncedIds = JSON.parse(localStorage.getItem('aluwal-synced') || '[]');
+
+function saveSync() {
+  localStorage.setItem('aluwal-synced', JSON.stringify(syncedIds));
+}
+
+function getPendientes() {
+  return ventas.filter(v => !syncedIds.includes(v.id));
+}
+let editingId = null;
+let currentFilter = 'todos';
+let currentPeriodo = 'todo';
+
+function save() {
+  localStorage.setItem('aluwal-ventas', JSON.stringify(ventas));
+}
+
+function genId() {
+  return 'V' + Date.now();
+}
+
+function formatMoney(n) {
+  if (!n) return '—';
+  return '$' + Number(n).toLocaleString('es-AR');
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  const [y, m, day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+const canalClass = {
+  'MercadoLibre': 'canal-ml',
+  'Tienda Nube': 'canal-tn',
+  'WhatsApp / Directo': 'canal-wp',
+  'Showroom / Local': 'canal-sh',
+  'Constructoras': 'canal-co',
+};
+
+function renderPendienteBadge() {
+  const count = getPendientes().length;
+  const badge = document.getElementById('badge-pendientes');
+  const btn = document.getElementById('btn-sync-pendientes');
+  if (badge) badge.textContent = count > 0 ? count : '';
+  if (btn) btn.style.display = count > 0 ? 'flex' : 'none';
+}
+
+async function syncPendientes() {
+  const pendientes = getPendientes();
+  if (!pendientes.length) return;
+  const btn = document.getElementById('btn-sync-pendientes');
+  const indicator = document.getElementById('sync-indicator');
+  btn.disabled = true;
+  indicator.textContent = '⏳ Subiendo ' + pendientes.length + ' venta(s)...';
+  indicator.style.color = 'var(--muted)';
+  let ok = 0;
+  let fail = 0;
+  for (const v of pendientes) {
+    try {
+      const payload = {
+        id: v.id, negocio: v.negocio, canal: v.canal, cliente: v.cliente,
+        contacto: v.contacto, producto: v.producto, monto: v.monto, sena: v.sena,
+        saldo: (Number(v.monto)||0)-(Number(v.sena)||0), formaPago: v.formaPago,
+        estadoPago: v.estadoPago, fechaCompra: v.fechaCompra,
+        fechaEntregaEst: v.fechaEntregaEst, fechaEntregaReal: v.fechaEntregaReal,
+        estadoEntrega: v.estadoEntrega, notas: v.notas, accion: 'nueva'
+      };
+      const resp = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+      const json = await resp.json();
+      if (json.status === 'ok') {
+        syncedIds.push(v.id);
+        ok++;
+      } else { fail++; }
+    } catch { fail++; }
+  }
+  saveSync();
+  renderPendienteBadge();
+  btn.disabled = false;
+  if (fail === 0) {
+    indicator.textContent = '✓ ' + ok + ' venta(s) sincronizadas!';
+    indicator.style.color = 'var(--success)';
+  } else {
+    indicator.textContent = '⚠ ' + ok + ' ok, ' + fail + ' fallaron. Revisá internet.';
+    indicator.style.color = 'var(--warning)';
+  }
+  setTimeout(() => { indicator.textContent = ''; }, 5000);
+}
+
+function renderStats() {
+  const filtered = getFiltered();
+  const total = filtered.length;
+  const totalMonto = filtered.reduce((a,v) => a + (Number(v.monto)||0), 0);
+  const cobrado = filtered.filter(v => v.estadoPago === 'Pagado').reduce((a,v) => a + (Number(v.monto)||0), 0);
+  const pendienteMonto = filtered.filter(v => v.estadoPago !== 'Pagado').reduce((a,v) => {
+    const saldo = (Number(v.monto)||0) - (Number(v.sena)||0);
+    return a + saldo;
+  }, 0);
+  const sinEntregar = filtered.filter(v => v.estadoEntrega !== 'Entregado').length;
+
+  // Desglose por forma de pago (monto total por cada forma)
+  const formas = ['Efectivo','Transferencia','3 cuotas','3 cuotas Galicia (promo)','6 cuotas','12 cuotas','MercadoPago','Cheque'];
+  const desglose = {};
+  formas.forEach(f => {
+    desglose[f] = filtered.filter(v => v.formaPago === f).reduce((a,v) => a + (Number(v.monto)||0), 0);
+  });
+
+  const desgloseHTML = formas
+    .filter(f => desglose[f] > 0)
+    .map(f => `<div class="stat"><div class="stat-label">${f}</div><div class="stat-value" style="font-size:16px;color:var(--accent2)">${formatMoney(desglose[f])}</div></div>`)
+    .join('');
+
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="stat-label">Total ventas</div><div class="stat-value blue">${total}</div></div>
+    <div class="stat"><div class="stat-label">Facturado</div><div class="stat-value yellow">${formatMoney(totalMonto)}</div></div>
+    <div class="stat"><div class="stat-label">Cobrado</div><div class="stat-value green">${formatMoney(cobrado)}</div></div>
+    <div class="stat"><div class="stat-label">Saldo pendiente</div><div class="stat-value red">${formatMoney(pendienteMonto)}</div></div>
+    <div class="stat"><div class="stat-label">Sin entregar</div><div class="stat-value ${sinEntregar > 0 ? 'red' : 'green'}">${sinEntregar}</div></div>
+    <div style="grid-column:1/-1;border-top:1px solid var(--border);padding-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">
+      ${desgloseHTML || '<div style="color:var(--muted);font-size:13px;padding:8px 0">Sin ventas registradas</div>'}
+    </div>
+  `;
+}
+
+function getFiltered() {
+  const search = (document.getElementById('search')?.value || '').toLowerCase();
+  const now = new Date();
+  const hoy = now.toISOString().slice(0,10);
+  const lunesStr = (() => {
+    const d = new Date(now);
+    const day = d.getDay() || 7;
+    d.setDate(d.getDate() - day + 1);
+    return d.toISOString().slice(0,10);
+  })();
+  const mesStr = now.toISOString().slice(0,7);
+  const anioStr = now.getFullYear().toString();
+
+  return ventas.filter(v => {
+    const matchFilter =
+      currentFilter === 'todos' ||
+      (currentFilter === 'pagado' && v.estadoPago === 'Pagado') ||
+      (currentFilter === 'pendiente' && v.estadoPago === 'Pendiente') ||
+      (currentFilter === 'no-entregado' && v.estadoEntrega !== 'Entregado') ||
+      (currentFilter === 'entregado' && v.estadoEntrega === 'Entregado');
+    const matchSearch = !search || 
+      (v.cliente||'').toLowerCase().includes(search) ||
+      (v.producto||'').toLowerCase().includes(search) ||
+      (v.contacto||'').toLowerCase().includes(search);
+    const fecha = v.fechaCompra || '';
+    const matchPeriodo =
+      currentPeriodo === 'todo' ||
+      (currentPeriodo === 'hoy' && fecha === hoy) ||
+      (currentPeriodo === 'semana' && fecha >= lunesStr && fecha <= hoy) ||
+      (currentPeriodo === 'mes' && fecha.startsWith(mesStr)) ||
+      (currentPeriodo === 'anio' && fecha.startsWith(anioStr)) ||
+      (currentPeriodo.length === 7 && fecha.startsWith(currentPeriodo));
+    return matchFilter && matchSearch && matchPeriodo;
+  });
+}
+
+function setPeriodo(p, btn) {
+  currentPeriodo = p;
+  document.querySelectorAll('.filters:nth-of-type(2) .filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('filter-mes-custom').value = '';
+  renderTable();
+  renderStats();
+}
+
+function setPeriodoCustom(val) {
+  if (!val) return;
+  currentPeriodo = val;
+  document.querySelectorAll('.filters:nth-of-type(2) .filter-btn').forEach(b => b.classList.remove('active'));
+  renderTable();
+  renderStats();
+}
+
+function renderTable() {
+  const filtered = getFiltered();
+  const tbody = document.getElementById('tbody');
+  const empty = document.getElementById('empty-state');
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = filtered.slice().reverse().map(v => {
+    const saldo = (Number(v.monto)||0) - (Number(v.sena)||0);
+    const pagoClass = v.estadoPago === 'Pagado' ? 'badge-pagado' : v.estadoPago === 'Parcial' ? 'badge-parcial' : 'badge-pendiente';
+    const entregaClass = v.estadoEntrega === 'Entregado' ? 'badge-entregado' : v.estadoEntrega === 'En proceso' ? 'badge-en-proceso' : 'badge-no-entregado';
+    const cc = canalClass[v.canal] || 'canal-wp';
+    return `<tr onclick="openDetail('${v.id}')">
+      <td class="td-mono" style="color:var(--muted)">${v.id.slice(-4)}</td>
+      <td><strong>${v.cliente || '—'}</strong><br><span style="color:var(--muted);font-size:11px">${v.negocio}</span></td>
+      <td class="col-hide" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v.producto || '—'}</td>
+      <td class="col-hide"><span class="canal-dot ${cc}">${v.canal}</span></td>
+      <td class="td-mono">${formatMoney(v.monto)}<br><span style="color:var(--muted);font-size:11px">Saldo: ${formatMoney(saldo)}</span></td>
+      <td class="col-hide">${formatDate(v.fechaCompra)}</td>
+      <td>${formatDate(v.fechaEntregaEst)}<br><span class="badge ${entregaClass}">${v.estadoEntrega}</span></td>
+      <td><span class="badge ${pagoClass}">${v.estadoPago}</span></td>
+      <td onclick="event.stopPropagation(); openModal('${v.id}')" style="color:var(--muted);font-size:18px;padding-right:16px;text-align:right">✎</td>
+    </tr>`;
+  }).join('');
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function setTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-ventas').style.display = name === 'ventas' ? '' : 'none';
+  document.getElementById('tab-dashboard').style.display = name === 'dashboard' ? '' : 'none';
+  if (name === 'dashboard') renderDashboard();
+}
+
+function renderDashboard() {
+  // Canal chart
+  const canales = {};
+  ventas.forEach(v => { canales[v.canal] = (canales[v.canal]||0) + 1; });
+  const maxC = Math.max(...Object.values(canales), 1);
+  document.getElementById('chart-canal').innerHTML = Object.entries(canales).map(([k,val]) => `
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span>${k}</span><span style="color:var(--muted)">${val}</span>
+      </div>
+      <div style="background:var(--surface2);border-radius:4px;height:8px">
+        <div style="background:var(--accent2);width:${(val/maxC*100).toFixed(0)}%;height:8px;border-radius:4px;transition:width .4s"></div>
+      </div>
+    </div>`).join('') || '<span style="color:var(--muted);font-size:13px">Sin datos</span>';
+
+  // Pago chart
+  const pagos = { Pagado: 0, Parcial: 0, Pendiente: 0 };
+  ventas.forEach(v => { pagos[v.estadoPago] = (pagos[v.estadoPago]||0) + 1; });
+  const colors = { Pagado: 'var(--success)', Parcial: 'var(--accent2)', Pendiente: 'var(--warning)' };
+  const maxP = Math.max(...Object.values(pagos), 1);
+  document.getElementById('chart-pago').innerHTML = Object.entries(pagos).map(([k,val]) => `
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span>${k}</span><span style="color:var(--muted)">${val}</span>
+      </div>
+      <div style="background:var(--surface2);border-radius:4px;height:8px">
+        <div style="background:${colors[k]};width:${(val/maxP*100).toFixed(0)}%;height:8px;border-radius:4px"></div>
+      </div>
+    </div>`).join('') || '<span style="color:var(--muted);font-size:13px">Sin datos</span>';
+
+  // Recientes
+  const rec = ventas.slice().reverse().slice(0,5);
+  document.getElementById('chart-recientes').innerHTML = rec.length ? rec.map(v => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div><strong style="font-size:13px">${v.cliente||'—'}</strong><br><span style="font-size:11px;color:var(--muted)">${v.producto||'—'}</span></div>
+      <div style="text-align:right"><span style="font-family:'DM Mono',monospace;font-size:13px">${formatMoney(v.monto)}</span><br>
+      <span class="badge badge-${v.estadoPago.toLowerCase()}" style="font-size:10px">${v.estadoPago}</span></div>
+    </div>`).join('') : '<span style="color:var(--muted);font-size:13px">Sin datos</span>';
+}
+
+function openModal(id) {
+  editingId = id || null;
+  document.getElementById('modal-title-text').textContent = id ? 'Editar venta' : 'Nueva venta';
+  document.getElementById('btn-delete').style.display = id ? '' : 'none';
+
+  if (id) {
+    const v = ventas.find(x => x.id === id);
+    if (!v) return;
+    document.getElementById('f-negocio').value = v.negocio || 'Aluwal Aberturas';
+    document.getElementById('f-canal').value = v.canal;
+    document.getElementById('f-cliente').value = v.cliente;
+    document.getElementById('f-contacto').value = v.contacto;
+    document.getElementById('f-producto').value = v.producto;
+    document.getElementById('f-monto').value = v.monto;
+    document.getElementById('f-sena').value = v.sena;
+    document.getElementById('f-forma-pago').value = v.formaPago;
+    document.getElementById('f-estado-pago').value = v.estadoPago;
+    document.getElementById('f-fecha-compra').value = v.fechaCompra;
+    document.getElementById('f-fecha-entrega-est').value = v.fechaEntregaEst;
+    document.getElementById('f-fecha-entrega-real').value = v.fechaEntregaReal;
+    document.getElementById('f-estado-entrega').value = v.estadoEntrega;
+    document.getElementById('f-notas').value = v.notas;
+  } else {
+    document.getElementById('f-negocio').value = 'Aluwal Aberturas';
+    document.getElementById('f-canal').value = 'WhatsApp / Directo';
+    document.getElementById('f-cliente').value = '';
+    document.getElementById('f-contacto').value = '';
+    document.getElementById('f-producto').value = '';
+    document.getElementById('f-monto').value = '';
+    document.getElementById('f-sena').value = '';
+    document.getElementById('f-forma-pago').value = 'Efectivo';
+    document.getElementById('f-estado-pago').value = 'Pendiente';
+    document.getElementById('f-fecha-compra').value = new Date().toISOString().slice(0,10);
+    document.getElementById('f-fecha-entrega-est').value = '';
+    document.getElementById('f-fecha-entrega-real').value = '';
+    document.getElementById('f-estado-entrega').value = 'No entregado';
+    document.getElementById('f-notas').value = '';
+  }
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+function saveVenta() {
+  const v = {
+    id: editingId || genId(),
+    negocio: document.getElementById('f-negocio').value,
+    canal: document.getElementById('f-canal').value,
+    cliente: document.getElementById('f-cliente').value,
+    contacto: document.getElementById('f-contacto').value,
+    producto: document.getElementById('f-producto').value,
+    monto: document.getElementById('f-monto').value,
+    sena: document.getElementById('f-sena').value,
+    formaPago: document.getElementById('f-forma-pago').value,
+    estadoPago: document.getElementById('f-estado-pago').value,
+    fechaCompra: document.getElementById('f-fecha-compra').value,
+    fechaEntregaEst: document.getElementById('f-fecha-entrega-est').value,
+    fechaEntregaReal: document.getElementById('f-fecha-entrega-real').value,
+    estadoEntrega: document.getElementById('f-estado-entrega').value,
+    notas: document.getElementById('f-notas').value,
+  };
+  const isNew = !editingId;
+  if (editingId) {
+    const idx = ventas.findIndex(x => x.id === editingId);
+    ventas[idx] = v;
+  } else {
+    ventas.push(v);
+  }
+  save();
+  closeModal();
+  renderAll();
+  syncToSheets(v, isNew ? "nueva" : "edicion");
+}
+
+function deleteVenta() {
+  if (!editingId) return;
+  if (!confirm('¿Seguro que querés cancelar esta venta? En Sheets quedará marcada en rojo como CANCELADA con montos en cero.')) return;
+  const v = ventas.find(x => x.id === editingId);
+  ventas = ventas.filter(x => x.id !== editingId);
+  save();
+  closeModal();
+  renderAll();
+  if (v) syncToSheets(v, 'cancelada');
+}
+
+function openDetail(id) {
+  const v = ventas.find(x => x.id === id);
+  if (!v) return;
+  const saldo = (Number(v.monto)||0) - (Number(v.sena)||0);
+  const pagoClass = v.estadoPago === 'Pagado' ? 'badge-pagado' : v.estadoPago === 'Parcial' ? 'badge-parcial' : 'badge-pendiente';
+  const entregaClass = v.estadoEntrega === 'Entregado' ? 'badge-entregado' : v.estadoEntrega === 'En proceso' ? 'badge-en-proceso' : 'badge-no-entregado';
+  
+  document.getElementById('detail-title').textContent = v.cliente || 'Detalle de venta';
+  document.getElementById('detail-body').innerHTML = `
+    <div class="detail-grid">
+      <div class="detail-item"><label>Negocio</label><div class="val">${v.negocio}</div></div>
+      <div class="detail-item"><label>Canal</label><div class="val">${v.canal}</div></div>
+      <div class="detail-item"><label>Cliente</label><div class="val">${v.cliente||'—'}</div></div>
+      <div class="detail-item"><label>Contacto</label><div class="val">${v.contacto||'—'}</div></div>
+      <div class="detail-item full"><label>Producto</label><div class="val">${v.producto||'—'}</div></div>
+      <div class="detail-item"><label>Monto total</label><div class="val" style="font-family:'DM Mono',monospace;font-size:18px;color:var(--accent)">${formatMoney(v.monto)}</div></div>
+      <div class="detail-item"><label>Seña</label><div class="val td-mono">${formatMoney(v.sena)}</div></div>
+      <div class="detail-item"><label>Saldo pendiente</label><div class="val td-mono" style="color:var(--danger)">${formatMoney(saldo)}</div></div>
+      <div class="detail-item"><label>Forma de pago</label><div class="val">${v.formaPago}</div></div>
+      <div class="detail-item"><label>Estado de pago</label><div class="val"><span class="badge ${pagoClass}">${v.estadoPago}</span></div></div>
+      <div class="detail-item"><label>Fecha de compra</label><div class="val">${formatDate(v.fechaCompra)}</div></div>
+      <div class="detail-item"><label>Entrega estimada</label><div class="val">${formatDate(v.fechaEntregaEst)}</div></div>
+      <div class="detail-item"><label>Entrega real</label><div class="val">${formatDate(v.fechaEntregaReal)}</div></div>
+      <div class="detail-item"><label>Estado de entrega</label><div class="val"><span class="badge ${entregaClass}">${v.estadoEntrega}</span></div></div>
+      ${v.notas ? `<div class="detail-item full"><label>Notas</label><div class="nota-box">${v.notas}</div></div>` : ''}
+    </div>`;
+  
+  document.getElementById('detail-edit-btn').onclick = () => {
+    closeDetail();
+    openModal(id);
+  };
+  document.getElementById('modal-detail').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('modal-detail').classList.remove('open');
+}
+
+function exportCSV() {
+  if (!ventas.length) { alert('No hay ventas para exportar'); return; }
+  const cols = ['ID','Negocio','Canal','Cliente','Contacto','Producto','Monto','Seña','Saldo','Forma de pago','Estado pago','Fecha compra','Entrega estimada','Entrega real','Estado entrega','Notas'];
+  const rows = ventas.map(v => [
+    v.id, v.negocio, v.canal, v.cliente, v.contacto, v.producto,
+    v.monto, v.sena, (Number(v.monto)||0)-(Number(v.sena)||0),
+    v.formaPago, v.estadoPago,
+    v.fechaCompra, v.fechaEntregaEst, v.fechaEntregaReal, v.estadoEntrega,
+    '"'+(v.notas||'').replace(/"/g,"'")+'"'
+  ]);
+  const csv = [cols.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+  a.download = 'aluwal-ventas-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+document.getElementById('modal-detail').addEventListener('click', function(e) {
+  if (e.target === this) closeDetail();
+});
+
+function renderAll() {
+  renderStats();
+  renderTable();
+  renderPendienteBadge();
+}
+
+renderAll();
+</script>
+
+<div id="pwa-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:14px 20px;z-index:300;align-items:center;gap:12px;box-shadow:0 -4px 20px rgba(0,0,0,.4);">
+  <div style="flex:1">
+    <div style="font-weight:600;font-size:14px">Instalar como app</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:2px">Funciona sin internet, queda en tu pantalla de inicio</div>
+  </div>
+  <button onclick="installPWA()" style="background:var(--accent);color:#000;border:none;border-radius:8px;padding:9px 18px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;">Instalar</button>
+  <button onclick="document.getElementById('pwa-banner').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px;">×</button>
+</div>
+
+<script>
+// PWA Manifest generado dinámicamente
+const manifestData = {
+  name: "Aluwal Ventas",
+  short_name: "Ventas",
+  description: "Control de ventas Aluwal",
+  start_url: ".",
+  display: "standalone",
+  background_color: "#0f0f11",
+  theme_color: "#0f0f11",
+  orientation: "portrait-primary",
+  icons: [{
+    src: "data:image/svg+xml," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='24' fill='%230f0f11'/><text x='96' y='120' font-family='sans-serif' font-size='90' font-weight='bold' fill='%23e8c547' text-anchor='middle'>A</text></svg>`),
+    sizes: "192x192",
+    type: "image/svg+xml",
+    purpose: "any maskable"
+  }]
+};
+const blob = new Blob([JSON.stringify(manifestData)], {type:'application/json'});
+const manifestURL = URL.createObjectURL(blob);
+document.getElementById('pwa-manifest').href = manifestURL;
+
+// Apple touch icon
+const iconSVG = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='22' fill='%230f0f11'/><text x='90' y='115' font-family='sans-serif' font-size='85' font-weight='bold' fill='%23e8c547' text-anchor='middle'>A</text></svg>`;
+document.getElementById('pwa-icon').href = "data:image/svg+xml," + encodeURIComponent(iconSVG);
+
+// Install prompt
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const banner = document.getElementById('pwa-banner');
+  banner.style.display = 'flex';
+});
+
+function installPWA() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(choice => {
+      deferredPrompt = null;
+      document.getElementById('pwa-banner').style.display = 'none';
+    });
+  } else {
+    // iOS instructions
+    alert('En iPhone:\n1. Tocá el botón compartir (cuadrado con flecha)\n2. Elegí "Agregar a pantalla de inicio"\n3. Tocá "Agregar"\n\nEn Android:\nAbrí el menú del navegador y elegí "Instalar app" o "Agregar a pantalla de inicio"');
+  }
+}
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('pwa-banner').style.display = 'none';
+});
+</script>
+</body>
+</html>
