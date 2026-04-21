@@ -618,6 +618,25 @@
         <label>Contacto (tel / mail)</label>
         <input id="f-contacto" placeholder="Ej: 11 5555-1234">
       </div>
+      <div class="field">
+        <label>Modalidad de entrega</label>
+        <select id="f-modalidad">
+          <option>Envío a domicilio</option>
+          <option>Retiro en local</option>
+        </select>
+      </div>
+      <div class="field full">
+        <label>Dirección de entrega</label>
+        <input id="f-direccion" placeholder="Ej: Av. San Martín 1234">
+      </div>
+      <div class="field">
+        <label>Localidad</label>
+        <input id="f-localidad" placeholder="Ej: Pilar, GBA Norte">
+      </div>
+      <div class="field">
+        <label>Entre calles</label>
+        <input id="f-entre-calles" placeholder="Ej: Entre Roca y Belgrano">
+      </div>
 
       <div class="section-sep">Producto y venta</div>
 
@@ -724,6 +743,10 @@ async function syncToSheets(v, accion) {
       canal: v.canal,
       cliente: v.cliente,
       contacto: v.contacto,
+      modalidad: v.modalidad || '',
+      direccion: v.direccion || '',
+      localidad: v.localidad || '',
+      entreCalles: v.entreCalles || '',
       producto: v.producto,
       monto: accion === 'cancelada' ? 0 : v.monto,
       sena: accion === 'cancelada' ? 0 : v.sena,
@@ -830,7 +853,15 @@ async function syncPendientes() {
     try {
       const payload = {
         id: v.id, negocio: v.negocio, canal: v.canal, cliente: v.cliente,
-        contacto: v.contacto, producto: v.producto, monto: v.monto, sena: v.sena,
+        contacto: v.contacto,
+        modalidad: v.modalidad || '',
+        direccion: v.direccion || '',
+        localidad: v.localidad || '',
+        entreCalles: v.entreCalles || '',
+      modalidad: v.modalidad || '',
+      direccion: v.direccion || '',
+      localidad: v.localidad || '',
+      entreCalles: v.entreCalles || '', producto: v.producto, monto: v.monto, sena: v.sena,
         saldo: (Number(v.monto)||0)-(Number(v.sena)||0), formaPago: v.formaPago,
         estadoPago: v.estadoPago, fechaCompra: v.fechaCompra,
         fechaEntregaEst: v.fechaEntregaEst, fechaEntregaReal: v.fechaEntregaReal,
@@ -1046,6 +1077,10 @@ function openModal(id) {
     document.getElementById('f-canal').value = v.canal;
     document.getElementById('f-cliente').value = v.cliente;
     document.getElementById('f-contacto').value = v.contacto;
+    document.getElementById('f-modalidad').value = v.modalidad || 'Envío a domicilio';
+    document.getElementById('f-direccion').value = v.direccion || '';
+    document.getElementById('f-localidad').value = v.localidad || '';
+    document.getElementById('f-entre-calles').value = v.entreCalles || '';
     document.getElementById('f-producto').value = v.producto;
     document.getElementById('f-monto').value = v.monto;
     document.getElementById('f-sena').value = v.sena;
@@ -1061,6 +1096,10 @@ function openModal(id) {
     document.getElementById('f-canal').value = 'WhatsApp / Directo';
     document.getElementById('f-cliente').value = '';
     document.getElementById('f-contacto').value = '';
+    document.getElementById('f-modalidad').value = 'Envío a domicilio';
+    document.getElementById('f-direccion').value = '';
+    document.getElementById('f-localidad').value = '';
+    document.getElementById('f-entre-calles').value = '';
     document.getElementById('f-producto').value = '';
     document.getElementById('f-monto').value = '';
     document.getElementById('f-sena').value = '';
@@ -1088,6 +1127,10 @@ async function saveVenta() {
     canal: document.getElementById('f-canal').value,
     cliente: document.getElementById('f-cliente').value,
     contacto: document.getElementById('f-contacto').value,
+    modalidad: document.getElementById('f-modalidad').value,
+    direccion: document.getElementById('f-direccion').value,
+    localidad: document.getElementById('f-localidad').value,
+    entreCalles: document.getElementById('f-entre-calles').value,
     producto: document.getElementById('f-producto').value,
     monto: document.getElementById('f-monto').value,
     sena: document.getElementById('f-sena').value,
@@ -1163,7 +1206,9 @@ function openDetail(id) {
       <div class="detail-item"><label>Negocio</label><div class="val">${v.negocio}</div></div>
       <div class="detail-item"><label>Canal</label><div class="val">${v.canal}</div></div>
       <div class="detail-item"><label>Cliente</label><div class="val">${v.cliente||'—'}</div></div>
-      <div class="detail-item"><label>Contacto</label><div class="val">${v.contacto||'—'}</div></div>
+      <div class="detail-item"><label>Celular / Contacto</label><div class="val">${v.contacto||'—'}</div></div>
+      <div class="detail-item"><label>Modalidad</label><div class="val">${v.modalidad||'—'}</div></div>
+      <div class="detail-item full"><label>Dirección</label><div class="val">${v.direccion||'—'}${v.localidad ? ' — ' + v.localidad : ''}${v.entreCalles ? ' (entre ' + v.entreCalles + ')' : ''}</div></div>
       <div class="detail-item full"><label>Producto</label><div class="val">${v.producto||'—'}</div></div>
       <div class="detail-item"><label>Monto total</label><div class="val" style="font-family:'DM Mono',monospace;font-size:18px;color:var(--accent)">${formatMoney(v.monto)}</div></div>
       <div class="detail-item"><label>Seña</label><div class="val td-mono">${formatMoney(v.sena)}</div></div>
@@ -1270,7 +1315,10 @@ function generarRemito(id) {
       <div>
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#888;margin-bottom:4px">Cliente</div>
         <div style="font-weight:600;font-size:14px">${v.cliente||'—'}</div>
-        <div style="color:#555;font-size:12px;margin-top:2px">${v.contacto||''}</div>
+        ${v.contacto ? '<div style="color:#555;font-size:12px;margin-top:2px">📱 Cel: ' + v.contacto + '</div>' : ''}
+        ${v.modalidad ? '<div style="color:#555;font-size:12px;margin-top:2px">🚚 ' + v.modalidad + '</div>' : ''}
+        ${v.direccion ? '<div style="color:#555;font-size:12px;margin-top:1px">📍 ' + v.direccion + (v.localidad ? ', ' + v.localidad : '') + '</div>' : ''}
+        ${v.entreCalles ? '<div style="color:#555;font-size:12px;margin-top:1px">Entre: ' + v.entreCalles + '</div>' : ''}
       </div>
       <div>
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#888;margin-bottom:4px">Canal / Negocio</div>
