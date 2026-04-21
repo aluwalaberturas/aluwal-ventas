@@ -10,6 +10,52 @@
 <meta name="apple-mobile-web-app-title" content="Aluwal Ventas">
 <meta name="theme-color" content="#0f0f11">
 <link rel="manifest" id="pwa-manifest">
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCshw1t7OXjTbg8ebvQzLn3VKxbY94cuRI",
+    authDomain: "aluwal-ventas.firebaseapp.com",
+    projectId: "aluwal-ventas",
+    storageBucket: "aluwal-ventas.firebasestorage.app",
+    messagingSenderId: "1016364782945",
+    appId: "1:1016364782945:web:0eabc4b024666d6e5d2120"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const ventasCol = collection(db, 'ventas');
+
+  // Escuchar cambios en tiempo real
+  onSnapshot(ventasCol, (snapshot) => {
+    ventas = [];
+    snapshot.forEach(d => ventas.push({ id: d.id, ...d.data() }));
+    // Ordenar por fecha localmente
+    ventas.sort((a,b) => (b.fechaCompra||'').localeCompare(a.fechaCompra||''));
+    renderAll();
+    renderPendienteBadge();
+  });
+
+  // Exponer funciones de Firebase globalmente
+  window.fbSave = async (v, isNew) => {
+    try {
+      if (isNew) {
+        await setDoc(doc(db, 'ventas', v.id), v);
+      } else {
+        await setDoc(doc(db, 'ventas', v.id), v);
+      }
+      return true;
+    } catch(e) { console.error(e); return false; }
+  };
+
+  window.fbDelete = async (id) => {
+    try {
+      await deleteDoc(doc(db, 'ventas', id));
+      return true;
+    } catch(e) { console.error(e); return false; }
+  };
+</script>
 <link rel="apple-touch-icon" id="pwa-icon">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
@@ -987,15 +1033,32 @@ function saveVenta() {
     notas: document.getElementById('f-notas').value,
   };
   const isNew = !editingId;
-  if (editingId) {
-    const idx = ventas.findIndex(x => x.id === editingId);
-    ventas[idx] = v;
-  } else {
-    ventas.push(v);
-  }
-  save();
   closeModal();
-  renderAll();
+  const indicator = document.getElementById('sync-indicator');
+  indicator.textContent = '⏳ Guardando...';
+  indicator.style.color = 'var(--muted)';
+  
+  // Guardar en Firebase (si disponible) y localmente
+  if (window.fbSave) {
+    window.fbSave(v, isNew).then(ok => {
+      if (ok) {
+        indicator.textContent = '✓ Guardado';
+        indicator.style.color = 'var(--success)';
+      } else {
+        indicator.textContent = '⚠ Error al guardar';
+        indicator.style.color = 'var(--danger)';
+      }
+      setTimeout(() => { indicator.textContent = ''; }, 3000);
+    });
+  } else {
+    // fallback local
+    if (isNew) { ventas.push(v); } else {
+      const idx = ventas.findIndex(x => x.id === editingId);
+      if(idx>=0) ventas[idx] = v;
+    }
+    save();
+    renderAll();
+  }
   syncToSheets(v, isNew ? "nueva" : "edicion");
 }
 
@@ -1003,10 +1066,19 @@ function deleteVenta() {
   if (!editingId) return;
   if (!confirm('¿Seguro que querés cancelar esta venta? En Sheets quedará marcada en rojo como CANCELADA con montos en cero.')) return;
   const v = ventas.find(x => x.id === editingId);
-  ventas = ventas.filter(x => x.id !== editingId);
-  save();
   closeModal();
-  renderAll();
+  if (window.fbDelete) {
+    window.fbDelete(editingId).then(ok => {
+      const indicator = document.getElementById('sync-indicator');
+      indicator.textContent = ok ? '✓ Venta cancelada' : '⚠ Error al cancelar';
+      indicator.style.color = ok ? 'var(--success)' : 'var(--danger)';
+      setTimeout(() => { indicator.textContent = ''; }, 3000);
+    });
+  } else {
+    ventas = ventas.filter(x => x.id !== editingId);
+    save();
+    renderAll();
+  }
   if (v) syncToSheets(v, 'cancelada');
 }
 
