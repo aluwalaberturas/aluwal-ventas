@@ -597,7 +597,14 @@
         <label>Negocio</label>
         <select id="f-negocio">
           <option>Aluwal Aberturas</option>
-          <option>Aluwal Home</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Vendedor</label>
+        <select id="f-vendedor">
+          <option>Milagros</option>
+          <option>Matías</option>
+          <option>Walter</option>
         </select>
       </div>
       <div class="field">
@@ -633,10 +640,6 @@
         <label>Localidad</label>
         <input id="f-localidad" placeholder="Ej: Pilar, GBA Norte">
       </div>
-      <div class="field">
-        <label>Entre calles</label>
-        <input id="f-entre-calles" placeholder="Ej: Entre Roca y Belgrano">
-      </div>
 
       <div class="section-sep">Producto y venta</div>
 
@@ -646,11 +649,11 @@
       </div>
       <div class="field">
         <label>Monto total ($)</label>
-        <input id="f-monto" type="number" placeholder="0">
+        <input id="f-monto" type="number" placeholder="0" oninput="calcEstadoPago()">
       </div>
       <div class="field">
         <label>Seña / anticipo ($)</label>
-        <input id="f-sena" type="number" placeholder="0">
+        <input id="f-sena" type="number" placeholder="0" oninput="calcEstadoPago()">
       </div>
       <div class="field">
         <label>Forma de pago</label>
@@ -684,7 +687,7 @@
         <label>Entrega estimada</label>
         <input id="f-fecha-entrega-est" type="date">
       </div>
-      <div class="field">
+      <div class="field" id="field-entrega-real" style="display:none">
         <label>Entrega real</label>
         <input id="f-fecha-entrega-real" type="date">
       </div>
@@ -811,6 +814,15 @@ async function genNumeroVenta() {
 }
 
 
+
+function calcEstadoPago() {
+  const monto = Number(document.getElementById('f-monto').value) || 0;
+  const sena = Number(document.getElementById('f-sena').value) || 0;
+  const sel = document.getElementById('f-estado-pago');
+  if (sena === 0) sel.value = 'Pendiente';
+  else if (sena >= monto && monto > 0) sel.value = 'Pagado';
+  else sel.value = 'Parcial';
+}
 
 function formatMoney(n) {
   if (!n) return '—';
@@ -1074,13 +1086,13 @@ function openModal(id) {
     const v = ventas.find(x => x.id === id);
     if (!v) return;
     document.getElementById('f-negocio').value = v.negocio || 'Aluwal Aberturas';
+    document.getElementById('f-vendedor').value = v.vendedor || 'Milagros';
     document.getElementById('f-canal').value = v.canal;
     document.getElementById('f-cliente').value = v.cliente;
     document.getElementById('f-contacto').value = v.contacto;
     document.getElementById('f-modalidad').value = v.modalidad || 'Envío a domicilio';
     document.getElementById('f-direccion').value = v.direccion || '';
     document.getElementById('f-localidad').value = v.localidad || '';
-    document.getElementById('f-entre-calles').value = v.entreCalles || '';
     document.getElementById('f-producto').value = v.producto;
     document.getElementById('f-monto').value = v.monto;
     document.getElementById('f-sena').value = v.sena;
@@ -1091,15 +1103,16 @@ function openModal(id) {
     document.getElementById('f-fecha-entrega-real').value = v.fechaEntregaReal;
     document.getElementById('f-estado-entrega').value = v.estadoEntrega;
     document.getElementById('f-notas').value = v.notas;
+    document.getElementById('field-entrega-real').style.display = '';
   } else {
     document.getElementById('f-negocio').value = 'Aluwal Aberturas';
+    document.getElementById('f-vendedor').value = 'Milagros';
     document.getElementById('f-canal').value = 'WhatsApp / Directo';
     document.getElementById('f-cliente').value = '';
     document.getElementById('f-contacto').value = '';
     document.getElementById('f-modalidad').value = 'Envío a domicilio';
     document.getElementById('f-direccion').value = '';
     document.getElementById('f-localidad').value = '';
-    document.getElementById('f-entre-calles').value = '';
     document.getElementById('f-producto').value = '';
     document.getElementById('f-monto').value = '';
     document.getElementById('f-sena').value = '';
@@ -1110,6 +1123,7 @@ function openModal(id) {
     document.getElementById('f-fecha-entrega-real').value = '';
     document.getElementById('f-estado-entrega').value = 'No entregado';
     document.getElementById('f-notas').value = '';
+    document.getElementById('field-entrega-real').style.display = 'none';
   }
   document.getElementById('modal').classList.add('open');
 }
@@ -1124,13 +1138,13 @@ async function saveVenta() {
     id: editingId || genId(),
     numeroVenta: numeroVenta || (14100 + ventas.length),
     negocio: document.getElementById('f-negocio').value,
+    vendedor: document.getElementById('f-vendedor').value,
     canal: document.getElementById('f-canal').value,
     cliente: document.getElementById('f-cliente').value,
     contacto: document.getElementById('f-contacto').value,
     modalidad: document.getElementById('f-modalidad').value,
     direccion: document.getElementById('f-direccion').value,
     localidad: document.getElementById('f-localidad').value,
-    entreCalles: document.getElementById('f-entre-calles').value,
     producto: document.getElementById('f-producto').value,
     monto: document.getElementById('f-monto').value,
     sena: document.getElementById('f-sena').value,
