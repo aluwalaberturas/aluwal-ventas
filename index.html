@@ -1062,7 +1062,7 @@ async function loadPresupuestos() {
   loading.style.display = 'block';
   list.innerHTML = '';
   try {
-    const resp = await fetch(COTIZADOR_URL);
+    const resp = await fetch(COTIZADOR_URL + '?accion=presupuestos');
     const rows = await resp.json();
     loading.style.display = 'none';
     if (!rows.length) {
