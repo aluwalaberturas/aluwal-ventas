@@ -1081,7 +1081,7 @@ async function loadPresupuestos() {
       const detalle = p.detalle || '—';
       const total = p.total || '—';
       const fecha = p.fecha || '';
-      const orden = p.orden || p.n || '';
+      const orden = p._n_orden || p.orden || p.n || '';
       return `<div class="table-wrap" style="margin-bottom:14px; padding:16px 20px;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
           <div style="flex:1; min-width:0;">
