@@ -31,7 +31,7 @@
   // Escuchar cambios en tiempo real
   onSnapshot(ventasCol, (snapshot) => {
     ventas = [];
-    snapshot.forEach(d => ventas.push({ id: d.id, ...d.data() }));
+    snapshot.forEach(d => ventas.push({ ...d.data(), id: d.id }));
     // Ordenar por fecha localmente
     ventas.sort((a,b) => (b.fechaCompra||'').localeCompare(a.fechaCompra||''));
     renderAll();
