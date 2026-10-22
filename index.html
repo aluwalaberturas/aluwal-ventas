@@ -575,6 +575,16 @@
     </div>
     <div id="pres-loading" style="display:none; text-align:center; padding:32px; color:var(--muted); font-size:13px;">Cargando presupuestos...</div>
     <div id="pres-list"></div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:32px; margin-bottom:16px; border-top:1px solid var(--border); padding-top:24px;">
+      <div>
+        <div style="font-size:13px; font-weight:700; color:var(--text)">Presupuestos del cotizador interno</div>
+        <div style="font-size:11px; color:var(--muted); margin-top:2px">Hacé clic en "Convertir" para pasarlo a venta</div>
+      </div>
+      <button class="btn btn-secondary" onclick="loadPresupuestosInterno()" style="font-size:11px; padding:8px 14px;">⟳ Actualizar</button>
+    </div>
+    <div id="pres-interno-loading" style="display:none; text-align:center; padding:32px; color:var(--muted); font-size:13px;">Cargando presupuestos internos...</div>
+    <div id="pres-interno-list"></div>
   </div>
 
   <!-- TAB: DASHBOARD -->
@@ -630,6 +640,7 @@
           <option>Showroom / Local</option>
           <option>Constructoras</option>
           <option>Cotizador Web</option>
+          <option>Cotizador Interno</option>
         </select>
       </div>
       <div class="field">
@@ -1056,10 +1067,11 @@ function setTab(name, btn) {
   document.getElementById('tab-presupuestos').style.display = name === 'presupuestos' ? '' : 'none';
   document.getElementById('tab-dashboard').style.display = name === 'dashboard' ? '' : 'none';
   if (name === 'dashboard') renderDashboard();
-  if (name === 'presupuestos') loadPresupuestos();
+  if (name === 'presupuestos') { loadPresupuestos(); loadPresupuestosInterno(); }
 }
 
 const COTIZADOR_URL = "https://script.google.com/macros/s/AKfycbxCRHrUZVr0T_2yGZE1EGlaJKDq3VvQa49UBrv89a19OPp6Bcg-2C_nJIorlKrFlYGZBQ/exec";
+const COTIZADOR_INTERNO_URL = "https://script.google.com/macros/s/AKfycbxW4EbqAu_LpmhppLibC8OyRw3YikBDHy4uxcXT7km_16PZdLIGGyionDS-CFlFV1EY/exec";
 
 async function loadPresupuestos() {
   const loading = document.getElementById('pres-loading');
@@ -1113,6 +1125,60 @@ function convertirPresupuesto(p) {
   document.getElementById('f-monto').value = monto || '';
   document.getElementById('f-sena').value = '';
   document.getElementById('f-notas').value = p.orden ? 'Cotizador Web - Presupuesto #' + p.orden : 'Cotizador Web';
+}
+
+async function loadPresupuestosInterno() {
+  const loading = document.getElementById('pres-interno-loading');
+  const list = document.getElementById('pres-interno-list');
+  loading.style.display = 'block';
+  list.innerHTML = '';
+  try {
+    const resp = await fetch(COTIZADOR_INTERNO_URL + '?action=presupuestos');
+    const rows = await resp.json();
+    loading.style.display = 'none';
+    if (!rows.length) {
+      list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;">No hay presupuestos todavía</div>';
+      return;
+    }
+    const sorted = [...rows].reverse();
+    list.innerHTML = sorted.map((p) => {
+      const nombre = p.nombre || '—';
+      const celular = p.celular || '—';
+      const detalle = p.detalle || '—';
+      const total = p.total || '—';
+      const orden = p.orden || '';
+      const fecha = p.fecha || '';
+      return `<div class="table-wrap" style="margin-bottom:14px; padding:16px 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:0;">
+            <div style="font-weight:700; font-size:14px; color:var(--text); margin-bottom:4px;">${nombre}</div>
+            <div style="font-size:12px; color:var(--muted); margin-bottom:6px;">📞 ${celular} &nbsp;·&nbsp; ${fecha} &nbsp;·&nbsp; ${orden ? orden : ''}</div>
+            <div style="font-size:13px; color:var(--text); white-space:pre-wrap; word-break:break-word;">${detalle}</div>
+          </div>
+          <div style="text-align:right; flex-shrink:0;">
+            <div style="font-size:18px; font-weight:800; color:var(--success); margin-bottom:10px;">${total}</div>
+            <button class="btn btn-primary" style="font-size:11px; padding:8px 14px; letter-spacing:1px;" onclick='convertirPresupuestoInterno(${JSON.stringify({nombre, celular, detalle, total, orden})})'>Convertir →</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    loading.style.display = 'none';
+    list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--danger);font-size:13px;">Error al cargar. Revisá la conexión o intentá de nuevo.</div>';
+  }
+}
+
+function convertirPresupuestoInterno(p) {
+  const monto = Number(String(p.total).replace(/[^0-9]/g, '')) || 0;
+  pendingNumeroVenta = p.orden || null;
+  openModal();
+  document.getElementById('f-cliente').value = p.nombre || '';
+  document.getElementById('f-contacto').value = p.celular || '';
+  document.getElementById('f-canal').value = 'Cotizador Interno';
+  document.getElementById('f-producto').value = p.detalle || '';
+  document.getElementById('f-monto').value = monto || '';
+  document.getElementById('f-sena').value = '';
+  document.getElementById('f-notas').value = p.orden ? 'Cotizador Interno - Presupuesto ' + p.orden : 'Cotizador Interno';
 }
 
 function renderDashboard() {
