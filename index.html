@@ -1356,6 +1356,7 @@ renderAll();
 <!-- REMITO -->
 <div class="remito-overlay" id="remito-overlay">
   <div class="remito-sheet">
+    <button onclick="document.getElementById('remito-overlay').classList.remove('open')" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:24px;cursor:pointer;color:#666;line-height:1;z-index:10;">×</button>
     <div id="remito-body"></div>
     <div class="remito-actions">
       <button onclick="document.getElementById('remito-overlay').classList.remove('open')" style="padding:9px 18px;border-radius:8px;border:1px solid #ccc;background:#fff;font-size:13px;cursor:pointer;">Cerrar</button>
@@ -1388,7 +1389,7 @@ function generarRemito(id) {
         <div style="font-size:20px;font-weight:700;letter-spacing:.5px">ALUWAL S.R.L.</div>
         <div style="font-size:11px;color:#555;margin-top:3px">CUIT: 30-71780744-4</div>
         <div style="font-size:11px;color:#555">Tel: 11 2394-8049 | @aluwal.arg</div>
-        <div style="font-size:11px;color:#555">www.aluwalaberturas.com.ar</div>
+        <div style="font-size:11px;color:#555">www.aluwalaberturas.com</div>
       </div>
       <div style="text-align:right">
         <div style="font-size:18px;font-weight:700;text-transform:uppercase">Remito</div>
