@@ -812,6 +812,7 @@ function getPendientes() {
   return ventas.filter(v => !syncedIds.includes(v.id));
 }
 let editingId = null;
+let pendingNumeroVenta = null;
 let currentFilter = 'todos';
 let currentPeriodo = 'todo';
 
@@ -1103,6 +1104,7 @@ async function loadPresupuestos() {
 
 function convertirPresupuesto(p) {
   const monto = Number(String(p.total).replace(/[^0-9]/g, '')) || 0;
+  pendingNumeroVenta = p.orden || null;
   openModal();
   document.getElementById('f-cliente').value = p.nombre || '';
   document.getElementById('f-contacto').value = p.celular || '';
@@ -1205,11 +1207,15 @@ function openModal(id) {
 }
 
 function closeModal() {
+  pendingNumeroVenta = null;
   document.getElementById('modal').classList.remove('open');
 }
 
 async function saveVenta() {
-  const numeroVenta = editingId ? ventas.find(x=>x.id===editingId)?.numeroVenta : await genNumeroVenta();
+  const numeroVenta = editingId
+    ? ventas.find(x=>x.id===editingId)?.numeroVenta
+    : (pendingNumeroVenta || await genNumeroVenta());
+  pendingNumeroVenta = null;
   const v = {
     id: editingId || genId(),
     numeroVenta: numeroVenta || (14100 + ventas.length),
