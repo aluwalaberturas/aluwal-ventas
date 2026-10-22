@@ -1270,7 +1270,6 @@ async function saveVenta() {
 
 function deleteVenta() {
   if (!editingId) return;
-  if (!confirm('¿Seguro que querés cancelar esta venta? En Sheets quedará marcada en rojo como CANCELADA con montos en cero.')) return;
   const v = ventas.find(x => x.id === editingId);
   closeModal();
   if (window.fbDelete) {
