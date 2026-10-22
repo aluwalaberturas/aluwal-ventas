@@ -777,7 +777,8 @@ async function syncToSheets(v, accion) {
       estadoEntrega: accion === 'cancelada' ? 'CANCELADA' : v.estadoEntrega,
       notas: accion === 'cancelada' ? '⚠ CANCELADA — ' + new Date().toLocaleDateString('es-AR') + (v.notas ? ' | ' + v.notas : '') : v.notas,
       accion: accion,
-      numeroVenta: v.numeroVenta || ''
+      numeroVenta: v.numeroVenta || '',
+      vendedor: v.vendedor || ''
     };
     const resp = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
     const json = await resp.json();
