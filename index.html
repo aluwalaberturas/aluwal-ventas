@@ -566,25 +566,37 @@
 
   <!-- TAB: PRESUPUESTOS WEB -->
   <div id="tab-presupuestos" style="display:none">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-      <div>
-        <div style="font-size:13px; font-weight:700; color:var(--text)">Presupuestos del cotizador online</div>
-        <div style="font-size:11px; color:var(--muted); margin-top:2px">Hacé clic en "Convertir" para pasarlo a venta</div>
-      </div>
-      <button class="btn btn-secondary" onclick="loadPresupuestos()" style="font-size:11px; padding:8px 14px;">⟳ Actualizar</button>
+    <!-- sub-tabs presupuestos -->
+    <div style="display:flex; gap:8px; margin-bottom:20px; border-bottom:2px solid var(--border); padding-bottom:0;">
+      <button id="pres-subtab-web-btn" onclick="showPresSubtab('web')"
+        style="background:none; border:none; padding:10px 18px; font-size:13px; font-weight:700; cursor:pointer; border-bottom:3px solid var(--accent2); margin-bottom:-2px; color:var(--accent2);">
+        Online
+      </button>
+      <button id="pres-subtab-interno-btn" onclick="showPresSubtab('interno')"
+        style="background:none; border:none; padding:10px 18px; font-size:13px; font-weight:700; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; color:var(--muted);">
+        Interno
+      </button>
     </div>
-    <div id="pres-loading" style="display:none; text-align:center; padding:32px; color:var(--muted); font-size:13px;">Cargando presupuestos...</div>
-    <div id="pres-list"></div>
 
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:32px; margin-bottom:16px; border-top:1px solid var(--border); padding-top:24px;">
-      <div>
-        <div style="font-size:13px; font-weight:700; color:var(--text)">Presupuestos del cotizador interno</div>
-        <div style="font-size:11px; color:var(--muted); margin-top:2px">Hacé clic en "Convertir" para pasarlo a venta</div>
+    <!-- sub-tab: online -->
+    <div id="pres-subtab-web">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <div style="font-size:11px; color:var(--muted);">Hacé clic en "Convertir" para pasarlo a venta</div>
+        <button class="btn btn-secondary" onclick="loadPresupuestos()" style="font-size:11px; padding:8px 14px;">⟳ Actualizar</button>
       </div>
-      <button class="btn btn-secondary" onclick="loadPresupuestosInterno()" style="font-size:11px; padding:8px 14px;">⟳ Actualizar</button>
+      <div id="pres-loading" style="display:none; text-align:center; padding:32px; color:var(--muted); font-size:13px;">Cargando presupuestos...</div>
+      <div id="pres-list"></div>
     </div>
-    <div id="pres-interno-loading" style="display:none; text-align:center; padding:32px; color:var(--muted); font-size:13px;">Cargando presupuestos internos...</div>
-    <div id="pres-interno-list"></div>
+
+    <!-- sub-tab: interno -->
+    <div id="pres-subtab-interno" style="display:none">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <div style="font-size:11px; color:var(--muted);">Hacé clic en "Convertir" para pasarlo a venta</div>
+        <button class="btn btn-secondary" onclick="loadPresupuestosInterno()" style="font-size:11px; padding:8px 14px;">⟳ Actualizar</button>
+      </div>
+      <div id="pres-interno-loading" style="display:none; text-align:center; padding:32px; color:var(--muted); font-size:13px;">Cargando presupuestos internos...</div>
+      <div id="pres-interno-list"></div>
+    </div>
   </div>
 
   <!-- TAB: DASHBOARD -->
@@ -1067,7 +1079,7 @@ function setTab(name, btn) {
   document.getElementById('tab-presupuestos').style.display = name === 'presupuestos' ? '' : 'none';
   document.getElementById('tab-dashboard').style.display = name === 'dashboard' ? '' : 'none';
   if (name === 'dashboard') renderDashboard();
-  if (name === 'presupuestos') { loadPresupuestos(); loadPresupuestosInterno(); }
+  if (name === 'presupuestos') showPresSubtab('web');
 }
 
 const COTIZADOR_URL = "https://script.google.com/macros/s/AKfycbxCRHrUZVr0T_2yGZE1EGlaJKDq3VvQa49UBrv89a19OPp6Bcg-2C_nJIorlKrFlYGZBQ/exec";
@@ -1125,6 +1137,19 @@ function convertirPresupuesto(p) {
   document.getElementById('f-monto').value = monto || '';
   document.getElementById('f-sena').value = '';
   document.getElementById('f-notas').value = p.orden ? 'Cotizador Web - Presupuesto #' + p.orden : 'Cotizador Web';
+}
+
+function showPresSubtab(which) {
+  const isWeb = which === 'web';
+  document.getElementById('pres-subtab-web').style.display = isWeb ? '' : 'none';
+  document.getElementById('pres-subtab-interno').style.display = isWeb ? 'none' : '';
+  const btnWeb = document.getElementById('pres-subtab-web-btn');
+  const btnInt = document.getElementById('pres-subtab-interno-btn');
+  btnWeb.style.borderBottomColor = isWeb ? 'var(--accent2)' : 'transparent';
+  btnWeb.style.color = isWeb ? 'var(--accent2)' : 'var(--muted)';
+  btnInt.style.borderBottomColor = isWeb ? 'transparent' : 'var(--accent2)';
+  btnInt.style.color = isWeb ? 'var(--muted)' : 'var(--accent2)';
+  if (isWeb) loadPresupuestos(); else loadPresupuestosInterno();
 }
 
 async function loadPresupuestosInterno() {
