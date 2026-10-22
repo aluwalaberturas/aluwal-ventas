@@ -748,7 +748,7 @@
 
 <script>
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoKLtsyYgpUzA7YlEgTh4ksGBg24u4mBLEAE8pFiuNzchhYN_DWL-erZBpEEJcd0xy/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxCRHrUZVr0T_2yGZE1EGlaJKDq3VvQa49UBrv89a19OPp6Bcg-2C_nJIorlKrFlYGZBQ/exec";
 
 async function syncToSheets(v, accion) {
   const indicator = document.getElementById('sync-indicator');
@@ -778,7 +778,8 @@ async function syncToSheets(v, accion) {
       notas: accion === 'cancelada' ? '⚠ CANCELADA — ' + new Date().toLocaleDateString('es-AR') + (v.notas ? ' | ' + v.notas : '') : v.notas,
       accion: accion,
       numeroVenta: v.numeroVenta || '',
-      vendedor: v.vendedor || ''
+      vendedor: v.vendedor || '',
+      tipo: 'venta'
     };
     const resp = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
     const json = await resp.json();
@@ -823,10 +824,12 @@ function genId() {
 }
 
 async function genNumeroVenta() {
-  if (window.getNextNumero) {
-    return await window.getNextNumero('ventas');
-  }
-  return 14100 + ventas.length;
+  try {
+    const resp = await fetch(SCRIPT_URL);
+    const json = await resp.json();
+    if (json.orden) return json.orden;
+  } catch(e) {}
+  return 'B-' + (2356 + ventas.length);
 }
 
 
