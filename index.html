@@ -1272,17 +1272,17 @@ function deleteVenta() {
   if (!editingId) return;
   const v = ventas.find(x => x.id === editingId);
   closeModal();
+  const idToDelete = editingId;
+  ventas = ventas.filter(x => x.id !== idToDelete);
+  save();
+  renderAll();
   if (window.fbDelete) {
-    window.fbDelete(editingId).then(ok => {
+    window.fbDelete(idToDelete).then(ok => {
       const indicator = document.getElementById('sync-indicator');
-      indicator.textContent = ok ? '✓ Venta cancelada' : '⚠ Error al cancelar';
+      indicator.textContent = ok ? '✓ Eliminada' : '⚠ Error al eliminar';
       indicator.style.color = ok ? 'var(--success)' : 'var(--danger)';
       setTimeout(() => { indicator.textContent = ''; }, 3000);
     });
-  } else {
-    ventas = ventas.filter(x => x.id !== editingId);
-    save();
-    renderAll();
   }
   if (v) syncToSheets(v, 'cancelada');
 }
