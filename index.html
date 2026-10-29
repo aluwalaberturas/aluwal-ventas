@@ -1409,8 +1409,8 @@ async function saveVenta() {
     fechaEntregaReal: document.getElementById('f-fecha-entrega-real').value,
     estadoEntrega: document.getElementById('f-estado-entrega').value,
     notas: document.getElementById('f-notas').value,
-    items: ventaItems.length ? ventaItems : undefined,
   };
+  if(ventaItems.length) v.items = ventaItems;
   const isNew = !editingId;
   closeModal();
   const indicator = document.getElementById('sync-indicator');
