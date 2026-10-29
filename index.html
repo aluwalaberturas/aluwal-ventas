@@ -685,6 +685,50 @@
         <label>Producto / descripción</label>
         <input id="f-producto" placeholder="Ej: Ventana Módena 120x100 DVH blanco">
       </div>
+
+      <div class="field full">
+        <label>Aberturas <span style="font-weight:400;color:var(--muted);font-size:12px">(opcional — para calcular cortes y vidrios en obra)</span></label>
+        <div id="items-list" style="margin-bottom:6px"></div>
+        <button type="button" class="ghost" id="btn-add-item" onclick="toggleAddItem()" style="font-size:13px;width:100%">+ Agregar abertura</button>
+        <div id="add-item-form" style="display:none;margin-top:10px;background:var(--panel2);border-radius:10px;padding:14px;border:1px solid var(--border)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Línea</label>
+              <select id="ni-linea" style="width:100%"><option value="modena">Módena</option><option value="a30">A30</option></select></div>
+            <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Color</label>
+              <select id="ni-color" style="width:100%"><option value="blanco">Blanco</option><option value="negro">Negro</option><option value="anodizado">Anodizado</option></select></div>
+            <div style="grid-column:1/-1"><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Tipo</label>
+              <select id="ni-tipo" style="width:100%">
+                <option value="corrediza">Corrediza 2 hojas</option>
+                <option value="corrediza3">Corrediza 3 hojas</option>
+                <option value="oscilobatiente">Abrir / Oscilobatiente</option>
+                <option value="banderola">Banderola</option>
+                <option value="brazo">Proyectante (brazo)</option>
+                <option value="pano">Paño fijo</option>
+              </select></div>
+            <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Ancho (mm)</label>
+              <input id="ni-ancho" type="number" placeholder="ej: 1200" style="width:100%"></div>
+            <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Alto (mm)</label>
+              <input id="ni-alto" type="number" placeholder="ej: 1000" style="width:100%"></div>
+            <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Vidrio</label>
+              <select id="ni-vidrio" style="width:100%"><option value="dvh">DVH</option><option value="laminado">Laminado 4+4mm</option><option value="v4">Simple V4mm</option></select></div>
+            <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Cantidad</label>
+              <input id="ni-cant" type="number" value="1" min="1" style="width:100%"></div>
+          </div>
+          <div style="margin-top:10px">
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px">Opcionales</label>
+            <div style="display:flex;gap:16px;flex-wrap:wrap">
+              <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:14px"><input type="checkbox" id="ni-premarco" checked> Premarco</label>
+              <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:14px"><input type="checkbox" id="ni-contramarco" checked> Contramarco</label>
+              <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:14px"><input type="checkbox" id="ni-mosquitero"> Mosquitero</label>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button type="button" class="primary" onclick="addItemToList()" style="flex:1">Agregar</button>
+            <button type="button" class="ghost" onclick="cancelAddItem()">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
       <div class="field">
         <label>Monto total ($)</label>
         <input id="f-monto" type="number" placeholder="0" oninput="calcEstadoPago()">
@@ -838,6 +882,70 @@ let editingId = null;
 let pendingNumeroVenta = null;
 let currentFilter = 'todos';
 let currentPeriodo = 'todo';
+let ventaItems = [];
+
+function renderItemsList() {
+  const el = document.getElementById('items-list');
+  if (!el) return;
+  if (!ventaItems.length) { el.innerHTML = ''; return; }
+  const TIPOS = {corrediza:'Corrediza 2H',corrediza3:'Corrediza 3H',oscilobatiente:'Abrir/Oscilo',banderola:'Banderola',brazo:'Proyectante',pano:'Paño fijo'};
+  el.innerHTML = ventaItems.map((it,i)=>`
+    <div style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px">
+      <div>
+        <strong>${it.cantidad}x</strong> ${TIPOS[it.tipo]||it.tipo} — ${it.linea==='a30'?'A30':'Módena'} ${it.color}
+        <span style="color:var(--muted)"> · ${it.ancho}×${it.alto}mm · ${it.vidrio.toUpperCase()}${it.opc&&it.opc.length?' · '+it.opc.join(', '):''}</span>
+      </div>
+      <button type="button" onclick="removeItem(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0">✕</button>
+    </div>`).join('');
+}
+
+function toggleAddItem() {
+  const f = document.getElementById('add-item-form');
+  const btn = document.getElementById('btn-add-item');
+  if (f.style.display === 'none') {
+    f.style.display = 'block';
+    btn.style.display = 'none';
+  } else {
+    cancelAddItem();
+  }
+}
+
+function cancelAddItem() {
+  const f = document.getElementById('add-item-form');
+  const btn = document.getElementById('btn-add-item');
+  if (f) f.style.display = 'none';
+  if (btn) btn.style.display = 'block';
+}
+
+function addItemToList() {
+  const ancho = Number(document.getElementById('ni-ancho').value);
+  const alto = Number(document.getElementById('ni-alto').value);
+  if (!ancho || !alto) { alert('Ingresá ancho y alto'); return; }
+  const opc = [];
+  if (document.getElementById('ni-premarco').checked) opc.push('premarco');
+  if (document.getElementById('ni-contramarco').checked) opc.push('contramarco');
+  if (document.getElementById('ni-mosquitero').checked) opc.push('mosquitero');
+  ventaItems.push({
+    custom: true,
+    linea: document.getElementById('ni-linea').value,
+    color: document.getElementById('ni-color').value,
+    tipo: document.getElementById('ni-tipo').value,
+    ancho, alto,
+    vidrio: document.getElementById('ni-vidrio').value,
+    cantidad: Number(document.getElementById('ni-cant').value) || 1,
+    opc
+  });
+  document.getElementById('ni-ancho').value = '';
+  document.getElementById('ni-alto').value = '';
+  document.getElementById('ni-cant').value = '1';
+  cancelAddItem();
+  renderItemsList();
+}
+
+function removeItem(i) {
+  ventaItems.splice(i, 1);
+  renderItemsList();
+}
 
 function save() {
   localStorage.setItem('aluwal-ventas', JSON.stringify(ventas));
@@ -1273,6 +1381,9 @@ function openModal(id) {
     document.getElementById('f-estado-entrega').value = v.estadoEntrega;
     document.getElementById('f-notas').value = v.notas;
     document.getElementById('field-entrega-real').style.display = '';
+    ventaItems = (v.items || []).map(x => ({...x}));
+    renderItemsList();
+    cancelAddItem();
   } else {
     document.getElementById('f-negocio').value = 'Aluwal Aberturas';
     document.getElementById('f-vendedor').value = 'Milagros';
@@ -1293,6 +1404,9 @@ function openModal(id) {
     document.getElementById('f-estado-entrega').value = 'No entregado';
     document.getElementById('f-notas').value = '';
     document.getElementById('field-entrega-real').style.display = 'none';
+    ventaItems = [];
+    renderItemsList();
+    cancelAddItem();
   }
   document.getElementById('modal').classList.add('open');
 }
@@ -1329,6 +1443,7 @@ async function saveVenta() {
     estadoEntrega: document.getElementById('f-estado-entrega').value,
     notas: document.getElementById('f-notas').value,
   };
+  if (ventaItems.length) v.items = ventaItems;
   const isNew = !editingId;
   closeModal();
   const indicator = document.getElementById('sync-indicator');
