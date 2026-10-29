@@ -1357,6 +1357,16 @@ async function saveVenta() {
     renderAll();
   }
   syncToSheets(v, isNew ? "nueva" : "edicion");
+  // Marcar el presupuesto como vendido en sisPresCache (para que aparezca en app de obra)
+  if(v.numeroVenta && /^B-/.test(String(v.numeroVenta))){
+    try{
+      const cache = JSON.parse(localStorage.getItem('sisPresCache')||'[]');
+      const idx = cache.findIndex(p=>String(p.num)===String(v.numeroVenta));
+      if(idx>=0){ cache[idx].estado = 'vendido'; cache[idx].vendedor = v.vendedor||''; }
+      else { cache.push({num:v.numeroVenta, fecha:v.fechaCompra||new Date().toISOString().slice(0,10), cliente:v.cliente||'', dir:v.direccion||'', localidad:v.localidad||'', items:[], estado:'vendido', vendedor:v.vendedor||''}); }
+      localStorage.setItem('sisPresCache', JSON.stringify(cache));
+    }catch(e){}
+  }
 }
 
 function deleteVenta() {
