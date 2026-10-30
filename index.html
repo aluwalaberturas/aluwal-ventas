@@ -759,6 +759,15 @@
           <option>Pagado</option>
         </select>
       </div>
+      <div class="field">
+        <label>Facturación</label>
+        <select id="f-facturacion">
+          <option value="sin-factura">Sin factura</option>
+          <option value="factura-a">Factura A</option>
+          <option value="factura-b">Factura B</option>
+          <option value="factura-c">Factura C</option>
+        </select>
+      </div>
 
       <div class="section-sep">Fechas y entrega</div>
 
@@ -1376,6 +1385,7 @@ function openModal(id) {
     document.getElementById('f-sena').value = v.sena;
     document.getElementById('f-forma-pago').value = v.formaPago;
     document.getElementById('f-estado-pago').value = v.estadoPago;
+    document.getElementById('f-facturacion').value = v.facturacion || 'sin-factura';
     document.getElementById('f-fecha-compra').value = v.fechaCompra;
     document.getElementById('f-fecha-entrega-est').value = v.fechaEntregaEst;
     document.getElementById('f-fecha-entrega-real').value = v.fechaEntregaReal;
@@ -1399,6 +1409,7 @@ function openModal(id) {
     document.getElementById('f-sena').value = '';
     document.getElementById('f-forma-pago').value = 'Efectivo';
     document.getElementById('f-estado-pago').value = 'Pendiente';
+    document.getElementById('f-facturacion').value = 'sin-factura';
     document.getElementById('f-fecha-compra').value = new Date().toISOString().slice(0,10);
     document.getElementById('f-fecha-entrega-est').value = '';
     document.getElementById('f-fecha-entrega-real').value = '';
@@ -1438,6 +1449,7 @@ async function saveVenta() {
     sena: document.getElementById('f-sena').value,
     formaPago: document.getElementById('f-forma-pago').value,
     estadoPago: document.getElementById('f-estado-pago').value,
+    facturacion: document.getElementById('f-facturacion').value,
     fechaCompra: document.getElementById('f-fecha-compra').value,
     fechaEntregaEst: document.getElementById('f-fecha-entrega-est').value,
     fechaEntregaReal: document.getElementById('f-fecha-entrega-real').value,
