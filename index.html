@@ -514,6 +514,7 @@
   <button class="tab active" onclick="setTab('ventas',this)">Ventas</button>
   <button class="tab" onclick="setTab('presupuestos',this)">Presupuestos web</button>
   <button class="tab" onclick="setTab('dashboard',this)">Dashboard</button>
+  <button class="tab" onclick="setTab('pagos',this)">Pagos</button>
 </div>
 
 <div class="main">
@@ -618,6 +619,104 @@
     </div>
   </div>
 
+  <!-- TAB: PAGOS -->
+  <div id="tab-pagos" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="filter-btn active" id="fpago-todos" onclick="filtrarPagos('todos',this)">Todos</button>
+        <button class="filter-btn" onclick="filtrarPagos('proveedor',this)">Proveedores</button>
+        <button class="filter-btn" onclick="filtrarPagos('sueldo',this)">Sueldos</button>
+        <button class="filter-btn" onclick="filtrarPagos('gasto',this)">Gastos fijos</button>
+      </div>
+      <button class="btn-add" onclick="openModalPago()">+ Nuevo pago</button>
+    </div>
+
+    <div class="stats" id="stats-pagos"></div>
+
+    <div class="table-wrap" style="margin-top:16px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>A quién</th>
+            <th>Concepto</th>
+            <th>Monto</th>
+            <th>Factura</th>
+            <th>Forma de pago</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tabla-pagos"></tbody>
+      </table>
+      <div id="pagos-empty" style="text-align:center;padding:40px;color:var(--muted);display:none">Sin pagos registrados</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL PAGOS -->
+<div class="modal-overlay" id="modal-pago">
+  <div class="modal">
+    <div class="modal-title">
+      <span>Nuevo pago</span>
+      <button class="close-btn" onclick="closeModalPago()">×</button>
+    </div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Fecha</label>
+        <input id="fp-fecha" type="date">
+      </div>
+      <div class="field">
+        <label>Tipo</label>
+        <select id="fp-tipo">
+          <option value="proveedor">Proveedor</option>
+          <option value="sueldo">Sueldo</option>
+          <option value="gasto">Gasto fijo</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>A quién / Nombre</label>
+        <input id="fp-quien" type="text" placeholder="Ej: Hierromas, Milagros, Alquiler...">
+      </div>
+      <div class="field">
+        <label>Concepto</label>
+        <input id="fp-concepto" type="text" placeholder="Ej: Compra perfiles, Sueldo octubre...">
+      </div>
+      <div class="field">
+        <label>Monto ($)</label>
+        <input id="fp-monto" type="number" placeholder="0">
+      </div>
+      <div class="field">
+        <label>Facturación</label>
+        <select id="fp-factura">
+          <option value="sin-factura">Sin factura</option>
+          <option value="factura-a">Factura A</option>
+          <option value="factura-b">Factura B</option>
+          <option value="factura-c">Factura C</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Forma de pago</label>
+        <select id="fp-forma-pago">
+          <option>Efectivo</option>
+          <option>Transferencia</option>
+          <option>Cheque</option>
+          <option>Tarjeta débito</option>
+          <option>Tarjeta crédito</option>
+          <option>Cuenta corriente</option>
+        </select>
+      </div>
+      <div class="field" style="grid-column:1/-1">
+        <label>Notas</label>
+        <textarea id="fp-notas" rows="2" placeholder="Notas adicionales..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn ghost" onclick="closeModalPago()">Cancelar</button>
+      <button class="btn btn-primary" onclick="savePago()">Guardar</button>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL NUEVA VENTA / EDITAR -->
@@ -763,9 +862,15 @@
         <label>Facturación</label>
         <select id="f-facturacion">
           <option value="sin-factura">Sin factura</option>
-          <option value="factura-a">Factura A</option>
-          <option value="factura-b">Factura B</option>
-          <option value="factura-c">Factura C</option>
+          <option value="aluwal-a">Aluwal — Factura A</option>
+          <option value="aluwal-b">Aluwal — Factura B</option>
+          <option value="aluwal-c">Aluwal — Factura C</option>
+          <option value="arquimep-a">Arquimep — Factura A</option>
+          <option value="arquimep-b">Arquimep — Factura B</option>
+          <option value="arquimep-c">Arquimep — Factura C</option>
+          <option value="personal-a">Personal — Factura A</option>
+          <option value="personal-b">Personal — Factura B</option>
+          <option value="personal-c">Personal — Factura C</option>
         </select>
       </div>
 
@@ -1196,8 +1301,10 @@ function setTab(name, btn) {
   document.getElementById('tab-ventas').style.display = name === 'ventas' ? '' : 'none';
   document.getElementById('tab-presupuestos').style.display = name === 'presupuestos' ? '' : 'none';
   document.getElementById('tab-dashboard').style.display = name === 'dashboard' ? '' : 'none';
+  document.getElementById('tab-pagos').style.display = name === 'pagos' ? '' : 'none';
   if (name === 'dashboard') renderDashboard();
   if (name === 'presupuestos') showPresSubtab('web');
+  if (name === 'pagos') renderPagos();
 }
 
 const COTIZADOR_URL = "https://script.google.com/macros/s/AKfycbxCRHrUZVr0T_2yGZE1EGlaJKDq3VvQa49UBrv89a19OPp6Bcg-2C_nJIorlKrFlYGZBQ/exec";
@@ -1587,6 +1694,122 @@ function renderAll() {
 }
 
 renderAll();
+
+// ── PAGOS ──────────────────────────────────────────────
+let pagos = JSON.parse(localStorage.getItem('aluwal_pagos') || '[]');
+let _filtroPago = 'todos';
+
+function savePagosLocal() {
+  localStorage.setItem('aluwal_pagos', JSON.stringify(pagos));
+}
+
+function openModalPago() {
+  document.getElementById('fp-fecha').value = new Date().toISOString().slice(0,10);
+  document.getElementById('fp-tipo').value = 'proveedor';
+  document.getElementById('fp-quien').value = '';
+  document.getElementById('fp-concepto').value = '';
+  document.getElementById('fp-monto').value = '';
+  document.getElementById('fp-factura').value = 'sin-factura';
+  document.getElementById('fp-forma-pago').value = 'Efectivo';
+  document.getElementById('fp-notas').value = '';
+  document.getElementById('modal-pago').classList.add('open');
+}
+
+function closeModalPago() {
+  document.getElementById('modal-pago').classList.remove('open');
+}
+
+async function savePago() {
+  const p = {
+    id: 'pago_' + Date.now(),
+    fecha: document.getElementById('fp-fecha').value,
+    tipo: document.getElementById('fp-tipo').value,
+    quien: document.getElementById('fp-quien').value,
+    concepto: document.getElementById('fp-concepto').value,
+    monto: document.getElementById('fp-monto').value,
+    factura: document.getElementById('fp-factura').value,
+    formaPago: document.getElementById('fp-forma-pago').value,
+    notas: document.getElementById('fp-notas').value,
+  };
+  if (!p.quien || !p.monto) { alert('Completá al menos "A quién" y "Monto"'); return; }
+  pagos.unshift(p);
+  savePagosLocal();
+  closeModalPago();
+  renderPagos();
+  syncPagoToSheets(p);
+}
+
+async function syncPagoToSheets(p) {
+  const tipoLabel = {proveedor:'Proveedor', sueldo:'Sueldo', gasto:'Gasto fijo'}[p.tipo] || p.tipo;
+  const facturaLabel = {
+    'sin-factura':'Sin factura','factura-a':'Factura A','factura-b':'Factura B','factura-c':'Factura C'
+  }[p.factura] || p.factura;
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        tipo: 'pago',
+        fecha: p.fecha,
+        tipoPago: tipoLabel,
+        quien: p.quien,
+        concepto: p.concepto,
+        monto: p.monto,
+        factura: facturaLabel,
+        formaPago: p.formaPago,
+        notas: p.notas,
+        accion: 'nuevo'
+      })
+    });
+  } catch(e) { console.warn('Sync pago sheets:', e); }
+}
+
+function filtrarPagos(f, btn) {
+  _filtroPago = f;
+  document.querySelectorAll('#tab-pagos .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPagos();
+}
+
+function renderPagos() {
+  const fmt = n => '$' + Number(n||0).toLocaleString('es-AR');
+  const tipoLabel = {proveedor:'Proveedor', sueldo:'Sueldo', gasto:'Gasto fijo'};
+  const facturaLabel = {
+    'sin-factura':'Sin factura','factura-a':'Factura A','factura-b':'Factura B','factura-c':'Factura C'
+  };
+
+  const lista = _filtroPago === 'todos' ? pagos : pagos.filter(p => p.tipo === _filtroPago);
+
+  // Stats
+  const total = lista.reduce((s,p) => s + (Number(p.monto)||0), 0);
+  document.getElementById('stats-pagos').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total pagado</div><div class="stat-value red">${fmt(total)}</div></div>
+    <div class="stat-card"><div class="stat-label">Registros</div><div class="stat-value">${lista.length}</div></div>
+  `;
+
+  const tbody = document.getElementById('tabla-pagos');
+  const empty = document.getElementById('pagos-empty');
+  if (!lista.length) { tbody.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = lista.map(p => `
+    <tr>
+      <td>${p.fecha ? p.fecha.split('-').reverse().join('/') : '—'}</td>
+      <td><span style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--surface2);color:var(--muted)">${tipoLabel[p.tipo]||p.tipo}</span></td>
+      <td><strong>${p.quien||'—'}</strong></td>
+      <td style="color:var(--muted);font-size:13px">${p.concepto||'—'}</td>
+      <td><strong style="color:var(--danger)">${fmt(p.monto)}</strong></td>
+      <td style="font-size:12px;color:var(--muted)">${facturaLabel[p.factura]||p.factura||'—'}</td>
+      <td style="font-size:12px">${p.formaPago||'—'}</td>
+      <td><button onclick="eliminarPago('${p.id}')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:16px;padding:0 4px">×</button></td>
+    </tr>
+  `).join('');
+}
+
+function eliminarPago(id) {
+  if (!confirm('¿Eliminar este pago?')) return;
+  pagos = pagos.filter(p => p.id !== id);
+  savePagosLocal();
+  renderPagos();
+}
 
 </script>
 
