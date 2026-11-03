@@ -669,7 +669,7 @@
       </div>
       <div class="field">
         <label>Tipo</label>
-        <select id="fp-tipo">
+        <select id="fp-tipo" onchange="updateQuienSel()">
           <option value="proveedor">Proveedor</option>
           <option value="sueldo">Sueldo</option>
           <option value="gasto">Gasto fijo</option>
@@ -677,7 +677,11 @@
       </div>
       <div class="field">
         <label>A quién / Nombre</label>
-        <input id="fp-quien" type="text" placeholder="Ej: Hierromas, Milagros, Alquiler...">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <select id="fp-quien-sel" style="flex:1" onchange="onQuienSelChange()"></select>
+          <button type="button" onclick="agregarQuien()" title="Agregar a la lista" style="padding:6px 11px;border-radius:6px;background:var(--panel2);border:1px solid var(--border);cursor:pointer;font-size:16px;line-height:1;color:var(--text)">+</button>
+        </div>
+        <input id="fp-quien-custom" type="text" placeholder="Escribir nombre..." style="display:none;margin-top:6px">
       </div>
       <div class="field">
         <label>Concepto</label>
@@ -1700,6 +1704,65 @@ renderAll();
 let pagos = JSON.parse(localStorage.getItem('aluwal_pagos') || '[]');
 let _filtroPago = 'todos';
 
+const QUIEN_DEFAULTS = {
+  proveedor: ['Hierromas', 'Alfametal', 'Pavir', 'Gromanti', 'Grupo Roller', 'ALUAR', 'Ferretería', 'Vidriería'],
+  sueldo:    ['Milagros', 'Matías', 'Walter'],
+  gasto:     ['Alquiler', 'Luz', 'Gas', 'Internet', 'Teléfono', 'Monotributo', 'IIBB ARBA', 'Seguro']
+};
+
+function getQuienLists() {
+  try { return JSON.parse(localStorage.getItem('aluwal_quien_lists') || 'null') || JSON.parse(JSON.stringify(QUIEN_DEFAULTS)); }
+  catch(e) { return JSON.parse(JSON.stringify(QUIEN_DEFAULTS)); }
+}
+function saveQuienLists(lists) {
+  localStorage.setItem('aluwal_quien_lists', JSON.stringify(lists));
+}
+
+function updateQuienSel() {
+  const tipo = document.getElementById('fp-tipo').value;
+  const sel = document.getElementById('fp-quien-sel');
+  const lists = getQuienLists();
+  const items = lists[tipo] || [];
+  sel.innerHTML = '<option value="">-- Seleccioná --</option>' +
+    items.map(n => `<option value="${n}">${n}</option>`).join('') +
+    '<option value="__otro__">✏️ Otro (escribir)...</option>';
+  sel.value = '';
+  document.getElementById('fp-quien-custom').style.display = 'none';
+}
+
+function onQuienSelChange() {
+  const sel = document.getElementById('fp-quien-sel');
+  const custom = document.getElementById('fp-quien-custom');
+  if (sel.value === '__otro__') {
+    custom.style.display = '';
+    custom.value = '';
+    custom.focus();
+  } else {
+    custom.style.display = 'none';
+  }
+}
+
+function agregarQuien() {
+  const tipo = document.getElementById('fp-tipo').value;
+  const nombre = prompt('Nombre a agregar a la lista:');
+  if (!nombre || !nombre.trim()) return;
+  const lists = getQuienLists();
+  if (!lists[tipo].includes(nombre.trim())) {
+    lists[tipo].push(nombre.trim());
+    saveQuienLists(lists);
+  }
+  updateQuienSel();
+  document.getElementById('fp-quien-sel').value = nombre.trim();
+}
+
+function getQuienValue() {
+  const sel = document.getElementById('fp-quien-sel');
+  if (sel.value === '__otro__' || sel.value === '') {
+    return document.getElementById('fp-quien-custom').value.trim();
+  }
+  return sel.value;
+}
+
 function savePagosLocal() {
   localStorage.setItem('aluwal_pagos', JSON.stringify(pagos));
 }
@@ -1707,12 +1770,12 @@ function savePagosLocal() {
 function openModalPago() {
   document.getElementById('fp-fecha').value = new Date().toISOString().slice(0,10);
   document.getElementById('fp-tipo').value = 'proveedor';
-  document.getElementById('fp-quien').value = '';
   document.getElementById('fp-concepto').value = '';
   document.getElementById('fp-monto').value = '';
   document.getElementById('fp-factura').value = 'sin-factura';
   document.getElementById('fp-forma-pago').value = 'Efectivo';
   document.getElementById('fp-notas').value = '';
+  updateQuienSel();
   document.getElementById('modal-pago').classList.add('open');
 }
 
@@ -1725,7 +1788,7 @@ async function savePago() {
     id: 'pago_' + Date.now(),
     fecha: document.getElementById('fp-fecha').value,
     tipo: document.getElementById('fp-tipo').value,
-    quien: document.getElementById('fp-quien').value,
+    quien: getQuienValue(),
     concepto: document.getElementById('fp-concepto').value,
     monto: document.getElementById('fp-monto').value,
     factura: document.getElementById('fp-factura').value,
