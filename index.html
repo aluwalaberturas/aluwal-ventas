@@ -1705,16 +1705,20 @@ let pagos = JSON.parse(localStorage.getItem('aluwal_pagos') || '[]');
 let _filtroPago = 'todos';
 
 const QUIEN_DEFAULTS = {
-  proveedor: ['Hierromas', 'Alfametal', 'Pavir', 'Gromanti', 'Grupo Roller', 'ALUAR', 'Ferretería', 'Vidriería'],
-  sueldo:    ['Milagros', 'Matías', 'Walter'],
+  proveedor: ['Fasglass', 'Vglass', 'Hierromas', 'Alfa Metal', 'Gromanti', 'Pavir', 'SCAR', 'ALUAR', 'Aluminio Urbano', 'Perfiles del Pilar', 'Grupo Roller'],
+  sueldo:    ['Matías', 'Milagros', 'Walter', 'Orlando', 'Jony', 'Pancho'],
   gasto:     ['Alquiler', 'Luz', 'Gas', 'Internet', 'Teléfono', 'Monotributo', 'IIBB ARBA', 'Seguro']
 };
 
+const QUIEN_VER = 'v2';
 function getQuienLists() {
-  try { return JSON.parse(localStorage.getItem('aluwal_quien_lists') || 'null') || JSON.parse(JSON.stringify(QUIEN_DEFAULTS)); }
-  catch(e) { return JSON.parse(JSON.stringify(QUIEN_DEFAULTS)); }
+  try {
+    if (localStorage.getItem('aluwal_quien_ver') !== QUIEN_VER) return JSON.parse(JSON.stringify(QUIEN_DEFAULTS));
+    return JSON.parse(localStorage.getItem('aluwal_quien_lists') || 'null') || JSON.parse(JSON.stringify(QUIEN_DEFAULTS));
+  } catch(e) { return JSON.parse(JSON.stringify(QUIEN_DEFAULTS)); }
 }
 function saveQuienLists(lists) {
+  localStorage.setItem('aluwal_quien_ver', QUIEN_VER);
   localStorage.setItem('aluwal_quien_lists', JSON.stringify(lists));
 }
 
