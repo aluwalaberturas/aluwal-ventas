@@ -1843,34 +1843,42 @@ function renderPagos() {
 
   const lista = _filtroPago === 'todos' ? pagos : pagos.filter(p => p.tipo === _filtroPago);
 
-  // Stats
-  const total = lista.reduce((s,p) => s + (Number(p.monto)||0), 0);
+  // Stats (solo activos)
+  const activos = lista.filter(p => !p.cancelado);
+  const total = activos.reduce((s,p) => s + (Number(p.monto)||0), 0);
   document.getElementById('stats-pagos').innerHTML = `
     <div class="stat-card"><div class="stat-label">Total pagado</div><div class="stat-value red">${fmt(total)}</div></div>
-    <div class="stat-card"><div class="stat-label">Registros</div><div class="stat-value">${lista.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Registros</div><div class="stat-value">${activos.length}</div></div>
   `;
 
   const tbody = document.getElementById('tabla-pagos');
   const empty = document.getElementById('pagos-empty');
   if (!lista.length) { tbody.innerHTML = ''; empty.style.display = ''; return; }
   empty.style.display = 'none';
-  tbody.innerHTML = lista.map(p => `
-    <tr>
-      <td>${p.fecha ? p.fecha.split('-').reverse().join('/') : '—'}</td>
-      <td><span style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--surface2);color:var(--muted)">${tipoLabel[p.tipo]||p.tipo}</span></td>
-      <td><strong>${p.quien||'—'}</strong></td>
-      <td style="color:var(--muted);font-size:13px">${p.concepto||'—'}</td>
-      <td><strong style="color:var(--danger)">${fmt(p.monto)}</strong></td>
-      <td style="font-size:12px;color:var(--muted)">${facturaLabel[p.factura]||p.factura||'—'}</td>
-      <td style="font-size:12px">${p.formaPago||'—'}</td>
-      <td><button onclick="eliminarPago('${p.id}')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:16px;padding:0 4px">×</button></td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = lista.map(p => {
+    const canc = p.cancelado;
+    const rowStyle = canc ? 'background:rgba(220,38,38,0.08);opacity:0.7' : '';
+    const textStyle = canc ? 'text-decoration:line-through;color:var(--muted)' : '';
+    return `<tr style="${rowStyle}">
+      <td style="${textStyle}">${p.fecha ? p.fecha.split('-').reverse().join('/') : '—'}</td>
+      <td><span style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--surface2);color:var(--muted);${canc?'text-decoration:line-through':''}">${tipoLabel[p.tipo]||p.tipo}</span></td>
+      <td style="${textStyle}"><strong>${p.quien||'—'}</strong></td>
+      <td style="color:var(--muted);font-size:13px;${canc?'text-decoration:line-through':''}">${p.concepto||'—'}</td>
+      <td style="${textStyle}"><strong style="color:${canc?'var(--muted)':'var(--danger)'}">${fmt(p.monto)}</strong></td>
+      <td style="font-size:12px;color:var(--muted);${canc?'text-decoration:line-through':''}">${facturaLabel[p.factura]||p.factura||'—'}</td>
+      <td style="font-size:12px;${canc?'text-decoration:line-through':''}">${p.formaPago||'—'}</td>
+      <td>${canc
+        ? `<span style="font-size:11px;color:var(--danger);font-weight:600">ANULADO</span>`
+        : `<button onclick="eliminarPago('${p.id}')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:16px;padding:0 4px" title="Anular pago">×</button>`
+      }</td>
+    </tr>`;
+  }).join('');
 }
 
 function eliminarPago(id) {
-  if (!confirm('¿Eliminar este pago?')) return;
-  pagos = pagos.filter(p => p.id !== id);
+  if (!confirm('¿Anular este pago? Va a quedar marcado en rojo.')) return;
+  const p = pagos.find(x => x.id === id);
+  if (p) { p.cancelado = true; p.fechaCancelado = new Date().toLocaleDateString('es-AR'); }
   savePagosLocal();
   renderPagos();
 }
