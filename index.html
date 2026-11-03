@@ -1705,12 +1705,12 @@ let pagos = JSON.parse(localStorage.getItem('aluwal_pagos') || '[]');
 let _filtroPago = 'todos';
 
 const QUIEN_DEFAULTS = {
-  proveedor: ['Fasglass', 'Vglass', 'Hierromas', 'Alfa Metal', 'Gromanti', 'Pavir', 'SCAR', 'ALUAR', 'Aluminio Urbano', 'Perfiles del Pilar', 'Grupo Roller', 'Fare Accesorios'],
+  proveedor: ['Fasglass', 'Vglass', 'Hierromas', 'Alfa Metal', 'Gromanti', 'Pavir', 'Aluminio Urbano', 'Perfiles del Pilar', 'Grupo Roller', 'Fare Accesorios'],
   sueldo:    ['Matías', 'Milagros', 'Walter', 'Orlando', 'Jony', 'Pancho'],
   gasto:     ['Alquiler', 'Luz', 'Gas', 'Internet', 'Teléfono', 'Monotributo', 'IIBB ARBA', 'Seguro']
 };
 
-const QUIEN_VER = 'v3';
+const QUIEN_VER = 'v4';
 function getQuienLists() {
   try {
     if (localStorage.getItem('aluwal_quien_ver') !== QUIEN_VER) return JSON.parse(JSON.stringify(QUIEN_DEFAULTS));
