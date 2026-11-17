@@ -1825,6 +1825,7 @@ async function syncPagoToSheets(p) {
         factura: facturaLabel,
         formaPago: p.formaPago,
         notas: p.notas,
+        id: p.id,
         accion: 'nuevo'
       })
     });
@@ -1885,6 +1886,17 @@ function eliminarPago(id) {
   if (p) { p.cancelado = true; p.fechaCancelado = new Date().toLocaleDateString('es-AR'); }
   savePagosLocal();
   renderPagos();
+  if (p) syncAnularPago(p);
+}
+
+// Marca el pago en rojo como ANULADO en el Sheet
+async function syncAnularPago(p) {
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ tipo: 'pago', accion: 'anulado', id: p.id, fecha: p.fecha, quien: p.quien, monto: p.monto })
+    });
+  } catch(e) { console.warn('Anular pago sheets:', e); }
 }
 
 </script>
