@@ -51,6 +51,22 @@
     } catch(e) { console.error(e); return false; }
   };
 
+  // Pagos compartidos entre todos los dispositivos (colección 'pagos')
+  const pagosCol = collection(db, 'pagos');
+  onSnapshot(pagosCol, (snapshot) => {
+    pagos = [];
+    snapshot.forEach(d => pagos.push({ ...d.data(), id: d.id }));
+    pagos.sort((a,b) => (b.fecha||'').localeCompare(a.fecha||'') || (b.id||'').localeCompare(a.id||''));
+    localStorage.setItem('aluwal_pagos', JSON.stringify(pagos));
+    const tp = document.getElementById('tab-pagos');
+    if (tp && tp.style.display !== 'none') renderPagos();
+  });
+
+  window.fbSavePago = async (p) => {
+    try { await setDoc(doc(db, 'pagos', p.id), p); return true; }
+    catch(e) { console.error(e); return false; }
+  };
+
   window.fbDelete = async (id) => {
     try {
       await deleteDoc(doc(db, 'ventas', id));
@@ -1701,7 +1717,7 @@ function renderAll() {
 renderAll();
 
 // ── PAGOS ──────────────────────────────────────────────
-let pagos = JSON.parse(localStorage.getItem('aluwal_pagos') || '[]');
+let pagos = []; // ahora vienen de Firebase (compartidos); se arranca de cero
 let _filtroPago = 'todos';
 
 const QUIEN_DEFAULTS = {
@@ -1804,6 +1820,7 @@ async function savePago() {
   savePagosLocal();
   closeModalPago();
   renderPagos();
+  if (window.fbSavePago) window.fbSavePago(p);
   syncPagoToSheets(p);
 }
 
@@ -1886,6 +1903,7 @@ function eliminarPago(id) {
   if (p) { p.cancelado = true; p.fechaCancelado = new Date().toLocaleDateString('es-AR'); }
   savePagosLocal();
   renderPagos();
+  if (p && window.fbSavePago) window.fbSavePago(p);
   if (p) syncAnularPago(p);
 }
 
